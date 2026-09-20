@@ -1,4 +1,4 @@
-package com.example.app;
+package com.devfinity.viratcrm;
 
 import com.getcapacitor.BridgeActivity;
 
