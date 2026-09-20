@@ -29,3 +29,7 @@
 - **Phase 53: Mobile Application Wrapper (Capacitor)**
   - Goal: Compile the existing Next.js web application into standalone native mobile apps for Android and iOS using Capacitor, focusing primarily on the Google Play Store.
   - Requirements: CAP-01, CAP-02
+
+- **Phase 54: Legal, Privacy & Accessibility Compliance**
+  - Goal: Implement all necessary legal pages, cookie consent, age verification, and accessibility enhancements to meet compliance requirements.
+  - Requirements: COMP-01, COMP-02

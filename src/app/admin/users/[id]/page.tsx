@@ -412,7 +412,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
                          <Link key={tm.user.id} href={`/admin/users/${tm.user.id}`}>
                            <div className="flex items-center gap-3 p-2 rounded-xl border border-slate-100 hover:border-indigo-200 bg-slate-50 hover:bg-white transition-colors cursor-pointer">
                              {tm.user.profilePhoto ? (
-                               <img src={tm.user.profilePhoto} className="h-8 w-8 rounded-full object-cover" alt="" />
+                               <img src={tm.user.profilePhoto} className="h-8 w-8 rounded-full object-cover" alt={`${tm.user.firstName} ${tm.user.lastName} profile`} />
                              ) : (
                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600"><User className="h-4 w-4" /></div>
                              )}

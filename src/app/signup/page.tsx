@@ -29,6 +29,8 @@ export default function SignupPage() {
     password: "",
     branchId: "",
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -60,6 +62,14 @@ export default function SignupPage() {
     setError(null);
     if (!formData.branchId) {
       setError("Please select a branch.");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("You must agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
+    if (!ageConfirmed) {
+      setError("You must confirm you are 18 years of age or older.");
       return;
     }
     signup.mutate({
@@ -195,6 +205,38 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              <div className="space-y-3 pt-2">
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    required
+                  />
+                  <Label htmlFor="terms" className="text-sm font-normal text-slate-600">
+                    I agree to the{" "}
+                    <Link href="/terms-of-service" className="text-emerald-600 hover:underline">Terms of Service</Link>
+                    {" "}and{" "}
+                    <Link href="/privacy-policy" className="text-emerald-600 hover:underline">Privacy Policy</Link>.
+                  </Label>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="age"
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    checked={ageConfirmed}
+                    onChange={(e) => setAgeConfirmed(e.target.checked)}
+                    required
+                  />
+                  <Label htmlFor="age" className="text-sm font-normal text-slate-600">
+                    I confirm that I am 18 years of age or older.
+                  </Label>
+                </div>
+              </div>
+
               {error && (
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
@@ -233,6 +275,10 @@ export default function SignupPage() {
               </Link>
             </p>
           </div>
+        </div>
+        <div className="mt-4 text-center text-xs text-slate-500">
+          <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link> •{" "}
+          <Link href="/terms-of-service" className="hover:underline">Terms</Link>
         </div>
       </motion.div>
     </div>

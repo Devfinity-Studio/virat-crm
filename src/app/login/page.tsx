@@ -212,6 +212,10 @@ function LoginContent() {
             </p>
           </div>
         </div>
+        <div className="mt-4 text-center text-xs text-slate-500">
+          <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link> •{" "}
+          <Link href="/terms-of-service" className="hover:underline">Terms</Link>
+        </div>
       </motion.div>
     </div>
   );
