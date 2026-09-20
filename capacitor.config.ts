@@ -6,7 +6,12 @@ const config: CapacitorConfig = {
   "webDir": "out",
   "server": {
     "url": "https://virat-crm.vercel.app",
-    "cleartext": true
+    "cleartext": true,
+    "errorPath": "error.html",
+    "allowNavigation": [
+      "virat-crm.vercel.app",
+      "*.vercel.app"
+    ]
   }
 }
 
