@@ -238,12 +238,9 @@ export function DashboardView({
       <FeatureGate featureKey="dashboard">
         <div className="flex flex-col space-y-8">
           <div>
-            <div className="flex items-center gap-3">
-              <img src="/androidLogo.png" alt="Virat Bio Plaantec Logo" className="w-10 h-10 object-contain md:hidden" />
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                Virat Dashboard
-              </h1>
-            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              Virat Dashboard
+            </h1>
             <p className="mt-1 text-slate-500">
               Welcome back,{" "}
               <span className="font-semibold text-slate-700">

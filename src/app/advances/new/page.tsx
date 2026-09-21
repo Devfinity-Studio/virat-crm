@@ -408,7 +408,7 @@ export default function NewAdvance() {
       {/* Company */}
       <div className="space-y-1">
         <Label>Company</Label>
-        <Input value="SHIVASHAKTI AGRITEC LIMITED" readOnly className="bg-muted" />
+        <Input value="Virat Bio Plaantec Private Limited" readOnly className="bg-muted" />
       </div>
       {/* Branch */}
       <div className="space-y-1">

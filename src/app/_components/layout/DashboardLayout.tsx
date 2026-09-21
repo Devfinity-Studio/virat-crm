@@ -47,7 +47,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }
 
   const getPageTitle = (path: string) => {
-    if (path === "/") return "Dashboard Overview";
+    if (path === "/") return <img src="/logo.webp" alt="Virat Bio Plaantec Logo" className="h-8 object-contain" />;
     if (path.startsWith("/sales")) return "Sales Register";
     if (path.startsWith("/inventory")) return "Inventory & Stock";
     if (path.startsWith("/crm")) return "Customer Master";
