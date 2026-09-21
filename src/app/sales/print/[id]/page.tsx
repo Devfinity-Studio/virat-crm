@@ -142,7 +142,7 @@ export default function SalePrintLayout() {
             </div>
             <div className="w-32 h-32 relative flex-shrink-0">
               <Image
-                src="/logo.webp"
+                src="/logo-removebg-preview.png"
                 alt="Virat Bio Plaantec Logo"
                 fill
                 className="object-contain"

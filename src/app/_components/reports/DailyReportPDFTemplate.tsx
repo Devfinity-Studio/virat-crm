@@ -37,7 +37,7 @@ export function DailyReportPDFTemplate({
         <div className="flex border-b-[2px] border-black pb-2 items-start p-2">
           <div className="w-[120px] pt-1">
             <Image
-              src="/logo.webp"
+              src="/logo-removebg-preview.png"
               alt="Logo"
               width={100}
               height={60}

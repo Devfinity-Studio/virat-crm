@@ -69,7 +69,7 @@ export default async function DailyReportPrintView({
           {/* Header Row */}
           <div className="flex border-b-[2px] border-black pb-2 items-start p-2">
             <div className="w-[120px] pt-1">
-              <Image src="/logo.webp" alt="Logo" width={100} height={60} className="object-contain" priority />
+              <Image src="/logo-removebg-preview.png" alt="Logo" width={100} height={60} className="object-contain" priority />
             </div>
             <div className="flex-1 text-center pt-2">
               <h1 className="text-xl font-bold font-sans">DAILY ACTIVITY REPORT BM & ABOVE</h1>

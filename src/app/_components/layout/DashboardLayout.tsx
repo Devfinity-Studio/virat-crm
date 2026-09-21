@@ -50,7 +50,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (path === "/") return (
       <>
         <span className="hidden md:inline">Dashboard Overview</span>
-        <img src="/logo.webp" alt="Virat Bio Plaantec Logo" className="h-8 object-contain md:hidden" />
+        <img src="/logo-removebg-preview.png" alt="Virat Bio Plaantec Logo" className="h-8 object-contain md:hidden" />
       </>
     );
     if (path.startsWith("/sales")) return "Sales Register";
