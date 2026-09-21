@@ -125,15 +125,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Native Top Navigation Header */}
-        <header className="sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between border-b border-transparent bg-gradient-to-r from-green-600 via-emerald-500 to-orange-500 px-4 pt-[env(safe-area-inset-top)] shadow-md md:h-16 md:px-8 dark:from-green-900 dark:via-emerald-900 dark:to-orange-900">
+        <header className="sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] shadow-sm md:border-transparent md:bg-gradient-to-r md:from-green-600 md:via-emerald-500 md:to-orange-500 md:h-16 md:px-8 dark:border-slate-800 dark:bg-slate-950 md:dark:from-green-900 md:dark:via-emerald-900 md:dark:to-orange-900">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => router.push("/")}
-              className="rounded-xl bg-white/20 p-2 text-white transition-colors hover:bg-white/30"
+              className="rounded-xl p-2 text-slate-700 hover:bg-slate-100 md:bg-white/20 md:text-white transition-colors md:hover:bg-white/30 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <Home className="h-5 w-5" />
             </button>
-            <h2 className="text-lg font-bold tracking-tight text-white shadow-sm">
+            <h2 className="text-lg font-bold tracking-tight text-slate-900 shadow-none md:text-white md:shadow-sm dark:text-slate-100">
               {getPageTitle(pathname)}
             </h2>
           </div>
@@ -141,7 +141,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <NotificationBell />
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center rounded-xl bg-white/20 p-2 text-white transition-colors hover:bg-red-500"
+              className="flex items-center justify-center rounded-xl p-2 text-slate-700 hover:bg-red-50 hover:text-red-600 md:bg-white/20 md:text-white md:hover:bg-red-500 transition-colors dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
               title="Logout"
             >
               <LogOut className="h-5 w-5" />
@@ -149,7 +149,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className={cn(
+          "flex-1 p-4 md:p-6 lg:p-8 transition-colors",
+          pathname === "/" ? "bg-gradient-to-br from-green-100/50 via-emerald-100/50 to-orange-100/50 md:bg-none dark:from-green-950/40 dark:via-emerald-950/40 dark:to-orange-950/40" : ""
+        )}>
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </div>
