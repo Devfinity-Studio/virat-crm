@@ -151,7 +151,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
         <main className={cn(
           "flex-1 p-4 md:p-6 lg:p-8 transition-colors",
-          pathname === "/" ? "bg-gradient-to-br from-green-100/50 via-emerald-100/50 to-orange-100/50 md:bg-none dark:from-green-950/40 dark:via-emerald-950/40 dark:to-orange-950/40" : ""
+          pathname === "/" ? "bg-gradient-to-br from-green-200/80 via-emerald-100 to-orange-200/80 md:bg-none dark:from-green-950/60 dark:via-emerald-950/50 dark:to-orange-950/60" : ""
         )}>
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
