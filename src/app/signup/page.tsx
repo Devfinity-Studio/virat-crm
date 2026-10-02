@@ -205,33 +205,33 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-start space-x-2">
+              <div className="space-y-4 pt-2">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="terms"
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    className="mt-0.5 shrink-0 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
                     required
                   />
-                  <Label htmlFor="terms" className="text-sm font-normal text-slate-600">
+                  <Label htmlFor="terms" className="text-sm font-normal leading-snug text-slate-600">
                     I agree to the{" "}
                     <Link href="/terms-of-service" className="text-emerald-600 hover:underline">Terms of Service</Link>
                     {" "}and{" "}
                     <Link href="/privacy-policy" className="text-emerald-600 hover:underline">Privacy Policy</Link>.
                   </Label>
                 </div>
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="age"
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    className="mt-0.5 shrink-0 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     checked={ageConfirmed}
                     onChange={(e) => setAgeConfirmed(e.target.checked)}
                     required
                   />
-                  <Label htmlFor="age" className="text-sm font-normal text-slate-600">
+                  <Label htmlFor="age" className="text-sm font-normal leading-snug text-slate-600">
                     I confirm that I am 18 years of age or older.
                   </Label>
                 </div>
