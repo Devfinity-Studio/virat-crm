@@ -5,6 +5,10 @@ import { decrypt } from "@/server/lib/auth";
 const publicPaths = [
   "/login",
   "/signup",
+  "/privacy-policy",
+  "/terms-of-service",
+  "/cookie-policy",
+  "/data-deletion",
   "/api/auth/login",
   "/api/auth/logout",
   "/api/trpc",
