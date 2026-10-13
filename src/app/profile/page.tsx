@@ -167,9 +167,9 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg text-red-600">
-              Account Session
+              Account Management
             </CardTitle>
-            <CardDescription>Manage your current access</CardDescription>
+            <CardDescription>Manage your current access and data</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between rounded-xl border border-red-100 bg-red-50/30 p-4">
@@ -188,6 +188,24 @@ export default function ProfilePage() {
                 }}
               >
                 Logout
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-red-900">Delete Account</p>
+                <p className="text-xs text-red-700">
+                  Permanently remove your account and data
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  window.location.href = "/data-deletion";
+                }}
+              >
+                Delete Account
               </Button>
             </div>
           </CardContent>

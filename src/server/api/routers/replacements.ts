@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, featureProtectedProcedure } from "@/server/api/trpc";
-import { replacements, sales } from "@/server/db/schema";
+import { replacements, sales, replacementItems } from "@/server/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { sendNotificationToUser } from "@/server/lib/push";
 import { TRPCError } from "@trpc/server";
@@ -11,6 +11,11 @@ export const replacementsRouter = createTRPCRouter({
       z.object({
         originalSaleId: z.number(),
         reason: z.string(),
+        replacementType: z.string(),
+        items: z.array(z.object({
+          productId: z.number(),
+          quantity: z.number()
+        }))
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -53,12 +58,23 @@ export const replacementsRouter = createTRPCRouter({
         userId: ctx.dbUser.id,
         reason: input.reason,
         status: "Pending" as const,
+        replacementType: input.replacementType,
       };
 
       const [replacement] = await ctx.db
         .insert(replacements)
         .values(newReplacement)
         .returning();
+
+      if (input.items.length > 0) {
+        await ctx.db.insert(replacementItems).values(
+          input.items.map(item => ({
+            replacementId: replacement.id,
+            productId: item.productId,
+            quantity: item.quantity,
+          }))
+        );
+      }
 
       return replacement;
     }),

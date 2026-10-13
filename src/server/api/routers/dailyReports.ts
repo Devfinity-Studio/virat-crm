@@ -93,6 +93,8 @@ export const dailyReportsRouter = createTRPCRouter({
         branchId: z.number().optional(),
         limit: z.number().min(1).max(100).default(50),
         offset: z.number().min(0).default(0),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -134,8 +136,22 @@ export const dailyReportsRouter = createTRPCRouter({
         return [];
       }
 
+      const filters: SQL[] = [inArray(dailyReports.userId, targetUserIds)];
+
+      if (input.startDate) {
+        const startOfDay = new Date(input.startDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        filters.push(sql`${dailyReports.reportDate} >= ${startOfDay}`);
+      }
+
+      if (input.endDate) {
+        const endOfDay = new Date(input.endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        filters.push(sql`${dailyReports.reportDate} <= ${endOfDay}`);
+      }
+
       return await db.query.dailyReports.findMany({
-        where: inArray(dailyReports.userId, targetUserIds),
+        where: and(...filters),
         orderBy: [desc(dailyReports.reportDate)],
         limit: input.limit,
         offset: input.offset,

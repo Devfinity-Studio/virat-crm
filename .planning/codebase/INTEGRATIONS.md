@@ -1,17 +1,9 @@
----
-focus: tech
-last_mapped_commit: HEAD
-date: 2026-05-29
----
+# INTEGRATIONS
 
-# INTEGRATIONS.md
-
-## External Services & APIs
-- **AWS S3**: Uses `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` for file storage.
-- **Email**: Resend (`resend`) for transactional emails.
-- **SMS**: Twilio (`twilio`) for SMS notifications.
-- **Database**: PostgreSQL (via `postgres` driver) hosted externally.
-- **Web Push**: `web-push` for PWA push notifications.
-
-## Internal APIs
-- **tRPC**: API endpoints exposed at `/api/trpc/*` for frontend-backend communication.
+- **Database:** PostgreSQL (accessed via Drizzle ORM).
+- **Authentication:** Kinde Auth for user management and authentication.
+- **Storage:** Cloudflare R2 (S3 compatible) for file uploads/storage.
+- **Email:** Resend for sending transactional emails.
+- **SMS:** Twilio for sending SMS notifications.
+- **Maps:** Leaflet & React Leaflet for geographical data and maps.
+- **Mobile:** Capacitor for building Android/iOS native applications from the web build.

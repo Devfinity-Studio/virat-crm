@@ -84,6 +84,7 @@ export function DashboardView({
       icon: ShoppingBag,
       hidden: !getIsFeatureEnabled("sales"),
       color: "bg-blue-50 text-blue-600",
+      iconBg: "bg-blue-500",
       borderColor: "border-blue-200"
     },
     {
@@ -92,6 +93,7 @@ export function DashboardView({
       icon: FileText,
       hidden: !getIsFeatureEnabled("inventory"),
       color: "bg-indigo-50 text-indigo-600",
+      iconBg: "bg-indigo-500",
       borderColor: "border-indigo-200"
     },
     {
@@ -100,6 +102,7 @@ export function DashboardView({
       icon: Contact,
       hidden: !getIsFeatureEnabled("crm"),
       color: "bg-purple-50 text-purple-600",
+      iconBg: "bg-purple-500",
       borderColor: "border-purple-200"
     },
     {
@@ -108,6 +111,7 @@ export function DashboardView({
       icon: FileText,
       hidden: !getIsFeatureEnabled("reports"),
       color: "bg-emerald-50 text-emerald-600",
+      iconBg: "bg-emerald-500",
       borderColor: "border-emerald-200"
     },
     {
@@ -116,6 +120,7 @@ export function DashboardView({
       icon: MapPin,
       hidden: !getIsFeatureEnabled("reports"),
       color: "bg-teal-50 text-teal-600",
+      iconBg: "bg-teal-500",
       borderColor: "border-teal-200"
     },
     {
@@ -124,6 +129,7 @@ export function DashboardView({
       icon: Wallet,
       hidden: !getIsFeatureEnabled("reports"),
       color: "bg-orange-50 text-orange-600",
+      iconBg: "bg-orange-500",
       borderColor: "border-orange-200"
     },
     {
@@ -132,6 +138,7 @@ export function DashboardView({
       icon: FileText,
       hidden: !getIsFeatureEnabled("reports"),
       color: "bg-rose-50 text-rose-600",
+      iconBg: "bg-rose-500",
       borderColor: "border-rose-200"
     },
     {
@@ -140,6 +147,7 @@ export function DashboardView({
       icon: Users,
       hidden: !getIsFeatureEnabled("attendance"),
       color: "bg-cyan-50 text-cyan-600",
+      iconBg: "bg-cyan-500",
       borderColor: "border-cyan-200"
     },
     {
@@ -148,6 +156,7 @@ export function DashboardView({
       icon: MapPin,
       hidden: !getIsFeatureEnabled("live-map") && !isAdmin,
       color: "bg-slate-100 text-slate-700",
+      iconBg: "bg-slate-500",
       borderColor: "border-slate-300"
     },
     {
@@ -156,6 +165,7 @@ export function DashboardView({
       icon: BarChart3,
       hidden: !getIsFeatureEnabled("admin-reports") && !isAdmin,
       color: "bg-slate-100 text-slate-700",
+      iconBg: "bg-slate-500",
       borderColor: "border-slate-300"
     },
     {
@@ -164,6 +174,7 @@ export function DashboardView({
       icon: Network,
       hidden: !getIsFeatureEnabled("org-chart") && !isAdmin,
       color: "bg-slate-100 text-slate-700",
+      iconBg: "bg-slate-500",
       borderColor: "border-slate-300"
     },
     {
@@ -172,6 +183,7 @@ export function DashboardView({
       icon: ShieldCheck,
       hidden: !isAdmin,
       color: "bg-red-50 text-red-600",
+      iconBg: "bg-red-500",
       borderColor: "border-red-200"
     },
     {
@@ -180,6 +192,7 @@ export function DashboardView({
       icon: Users,
       hidden: !isAdmin,
       color: "bg-slate-100 text-slate-700",
+      iconBg: "bg-slate-500",
       borderColor: "border-slate-300"
     },
     {
@@ -188,6 +201,7 @@ export function DashboardView({
       icon: Download,
       hidden: !isAdmin,
       color: "bg-slate-100 text-slate-700",
+      iconBg: "bg-slate-500",
       borderColor: "border-slate-300"
     },
     {
@@ -196,6 +210,7 @@ export function DashboardView({
       icon: Upload,
       hidden: !isAdmin,
       color: "bg-slate-100 text-slate-700",
+      iconBg: "bg-slate-500",
       borderColor: "border-slate-300"
     },
     {
@@ -204,6 +219,7 @@ export function DashboardView({
       icon: Sliders,
       hidden: user?.role !== "Developer",
       color: "bg-zinc-800 text-zinc-100",
+      iconBg: "bg-zinc-500",
       borderColor: "border-zinc-700"
     },
     { 
@@ -212,6 +228,7 @@ export function DashboardView({
       icon: User,
       hidden: false,
       color: "bg-pink-50 text-pink-600",
+      iconBg: "bg-pink-500",
       borderColor: "border-pink-200"
     },
   ];
@@ -222,7 +239,7 @@ export function DashboardView({
         <div className="flex flex-col space-y-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              Dashboard
+              Virat Dashboard
             </h1>
             <p className="mt-1 text-slate-500">
               Welcome back,{" "}
@@ -303,7 +320,7 @@ export function DashboardView({
                 return (
                   <Link href={link.href} key={link.href}>
                     <Card className={`group flex h-36 flex-col items-center justify-center gap-3 rounded-2xl border-none transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95 bg-white shadow-sm ring-1 ring-slate-100`}>
-                      <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-sm text-white ${link.color.replace(/bg-[a-z]+-50/, '').replace(/text-([a-z]+)-[0-9]+/, 'bg-$1-500')}`}>
+                      <div className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-sm text-white ${link.iconBg}`}>
                         <Icon className="h-8 w-8" />
                       </div>
                       <span className="text-center text-sm font-bold tracking-tight text-slate-700 group-hover:text-slate-900 px-2 line-clamp-1">

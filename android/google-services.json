@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188192226791",
+    "project_id": "viratbioplaantec-4d0b3",
+    "storage_bucket": "viratbioplaantec-4d0b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188192226791:android:038bd5ae13b62143515142",
+        "android_client_info": {
+          "package_name": "com.devfinity.viratcrm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBHNkNsKWvFGl7Bq5D5J0bum0QP9gY_go"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

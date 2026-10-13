@@ -32,6 +32,9 @@ export const crmRouter = createTRPCRouter({
           .object({
             id: z.string().uuid(),
             name: z.string(),
+            fatherName: z.string().nullable().optional(),
+            landlineNo: z.string().nullable().optional(),
+            marriageDate: z.any().nullable().optional(),
             mobile: z.string(),
             village: z.string(),
             district: z.string(),

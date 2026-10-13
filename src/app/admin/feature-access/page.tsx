@@ -15,6 +15,7 @@ import {
   FileText,
   Network,
   Contact,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -80,12 +81,25 @@ const FEATURES = [
     icon: Network,
     description: "Visual team hierarchy and reporting lines",
   },
+  {
+    key: "inventory",
+    label: "Inventory & Stock",
+    icon: Package,
+    description: "Manage products, stock levels, and transfers",
+  },
+  {
+    key: "admin",
+    label: "Admin Panel",
+    icon: ShieldCheck,
+    description: "Manage users, settings, and bulk operations",
+  },
 ];
-
-const ROLES = ["Admin", "Manager", "Employee"] as const;
 
 export default function FeatureAccessPage() {
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  const { data: rolesData, isLoading: rolesLoading } = api.roles.getAll.useQuery();
+  const roles = rolesData?.map(r => r.name) || ["Admin", "Manager", "Employee"];
 
   const { data: permissions, refetch } = api.permissions.getAll.useQuery();
   const toggleMutation = api.permissions.toggle.useMutation({
@@ -106,7 +120,7 @@ export default function FeatureAccessPage() {
   };
 
   const handleToggle = async (
-    role: (typeof ROLES)[number],
+    role: string,
     featureKey: string,
     currentStatus: boolean,
   ) => {
@@ -153,7 +167,7 @@ export default function FeatureAccessPage() {
                   <th className="w-1/3 px-8 py-6 text-sm font-bold text-gray-900">
                     Feature Module
                   </th>
-                  {ROLES.map((role) => (
+                  {roles.map((role) => (
                     <th
                       key={role}
                       className="px-6 py-6 text-center text-sm font-bold text-gray-900"
@@ -184,7 +198,7 @@ export default function FeatureAccessPage() {
                         </div>
                       </div>
                     </td>
-                    {ROLES.map((role) => {
+                    {roles.map((role) => {
                       const isEnabled = getPermission(role, feature.key);
                       const id = `${role}-${feature.key}`;
                       const updating = isUpdating === id;
@@ -197,8 +211,8 @@ export default function FeatureAccessPage() {
                             }
                             disabled={
                               updating ||
-                              (role === "Admin" && feature.key === "dashboard")
-                            } // Prevent disabling dashboard for Admin
+                              (role === "Admin" && (feature.key === "dashboard" || feature.key === "admin"))
+                            } // Prevent disabling dashboard and admin panel for Admin
                             className={cn(
                               "relative inline-flex h-8 w-14 items-center justify-center rounded-full transition-all duration-300 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
                               isEnabled

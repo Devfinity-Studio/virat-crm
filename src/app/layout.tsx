@@ -6,6 +6,7 @@ import { Inter, Montserrat, Open_Sans, Roboto } from "next/font/google";
 import { TRPCReactProvider } from "@/trpc/react";
 import { SkeletonProvider } from "@/components/ui/skeleton-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieBanner } from "./_components/layout/CookieBanner";
 
 export const metadata: Metadata = {
   title: "Virat CRM",
@@ -71,6 +72,7 @@ export default async function RootLayout({
           <SkeletonProvider>
             {children}
             <Toaster />
+            <CookieBanner />
           </SkeletonProvider>
         </TRPCReactProvider>
       </body>

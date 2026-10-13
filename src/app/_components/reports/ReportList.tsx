@@ -28,6 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Printer } from "lucide-react";
+import { PrintReportDialog } from "./PrintReportDialog";
 import { TimeSlabHistory } from "./TimeSlabHistory";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,14 @@ interface ReportListProps {
 export function ReportList({ isManager = false, isAdmin = false }: ReportListProps) {
   const [search, setSearch] = useState("");
   const [selectedReport, setSelectedReport] = useState<any>(null);
+
+  const [printEmployeeId, setPrintEmployeeId] = useState<string>("");
+  const [printEmployeeName, setPrintEmployeeName] = useState<string>("");
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+
+  const { data: usersForPrint } = api.users.getUsersForDropdown.useQuery(undefined, {
+    enabled: isManager || isAdmin,
+  });
   
   const [scope, setScope] = useState<"individual" | "management" | "branch">("individual");
   const [branchId, setBranchId] = useState<string>("");
@@ -114,18 +124,55 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="flex items-center gap-3 rounded-xl border-2 border-slate-200 bg-white p-2 shadow-[0_4px_0_0_rgba(226,232,240,1)]">
-        <div className="pl-3">
-          <Search className="h-4 w-4 text-slate-400" />
+      {/* Search Bar & Print Toolbar */}
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex-1 flex items-center gap-3 rounded-xl border-2 border-slate-200 bg-white p-2 shadow-[0_4px_0_0_rgba(226,232,240,1)]">
+          <div className="pl-3">
+            <Search className="h-4 w-4 text-slate-400" />
+          </div>
+          <Input
+            placeholder="Search by content, employee, or customer..."
+            className="border-none bg-transparent text-sm focus-visible:ring-0 font-medium"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-        <Input
-          placeholder="Search by content, employee, or customer..."
-          className="border-none bg-transparent text-sm focus-visible:ring-0 font-medium"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+
+        {(isManager || isAdmin) && (
+          <div className="flex gap-2">
+            <Select value={printEmployeeId} onValueChange={(val) => {
+              setPrintEmployeeId(val);
+              const u = usersForPrint?.find((x: any) => x.id === val);
+              if (u) setPrintEmployeeName(`${u.firstName} ${u.lastName}`);
+            }}>
+              <SelectTrigger className="w-[200px] h-[52px] rounded-xl border-2 border-slate-200 bg-white shadow-[0_4px_0_0_rgba(226,232,240,1)] font-bold">
+                <SelectValue placeholder="Select Employee to Print" />
+              </SelectTrigger>
+              <SelectContent>
+                {usersForPrint?.map((u: any) => (
+                  <SelectItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              className="h-[52px] rounded-xl gap-2 font-bold shadow-[0_4px_0_0_rgba(15,23,42,1)]"
+              disabled={!printEmployeeId}
+              onClick={() => setIsPrintDialogOpen(true)}
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+          </div>
+        )}
       </div>
+
+      <PrintReportDialog 
+        open={isPrintDialogOpen} 
+        onOpenChange={setIsPrintDialogOpen}
+        employeeId={printEmployeeId}
+        employeeName={printEmployeeName}
+        employeeData={usersForPrint?.find((x: any) => x.id === printEmployeeId)}
+      />
 
       <div className="space-y-4">
         {isLoading ? (

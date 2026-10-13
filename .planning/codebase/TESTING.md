@@ -1,17 +1,6 @@
----
-focus: quality
-last_mapped_commit: HEAD
-date: 2026-05-29
----
+# TESTING
 
-# TESTING.md
-
-## Frameworks
-- **Vitest**: Configured as the test runner (`vitest.config.ts`).
-- **TypeScript**: Tests are type-checked.
-
-## Structure
-- Tests are generally located in the `tests/` directory at the project root or alongside the modules they test.
-
-## Execution
-- Run tests via standard package manager commands (e.g., `vitest` or through configured `package.json` scripts if added).
+- **Framework:** Vitest
+- **Execution:** Run tests with `pnpm vitest` or `pnpm test` (if configured in package.json)
+- **Status:** Test coverage is currently limited. There's a `tests/` directory but full e2e or integration tests are not heavily present.
+- **Continuous Integration:** A linting and typechecking step (`pnpm check`) is configured, but comprehensive test suites need expansion.

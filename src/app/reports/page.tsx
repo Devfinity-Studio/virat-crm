@@ -65,14 +65,6 @@ export default function ReportsPage() {
                   Submit Report
                 </TabsTrigger>
               </TabsList>
-              <Link
-                href="/reports/print"
-                target="_blank"
-                className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
-              >
-                <Printer className="h-4 w-4" />
-                Print Today's Report
-              </Link>
             </div>
 
             <TabsContent value="list" className="mt-0 outline-none">

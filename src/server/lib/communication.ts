@@ -70,13 +70,26 @@ export async function sendEmailAlert(
   html: string,
   text: string,
 ): Promise<boolean> {
+  const unsubscribeHtml = `
+    <br><br>
+    <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;">
+    <p style="font-size: 12px; color: #666;">
+      Virat Bio Plaantec private limited<br>
+      SECOND FLOOR, SHOP NO-213, SAHITYA ICON, NARODA GIDC, Ahmedabad, Gujarat, 382330<br><br>
+      You are receiving this email because you are a registered user of Virat CRM. 
+      If you wish to stop receiving these emails or delete your account, please visit our 
+      <a href="https://virat-crm.vercel.app/data-deletion" style="color: #0070f3;">Data Deletion Request</a> page.
+    </p>
+  `;
+  const finalHtml = html + unsubscribeHtml;
+  
   if (resend) {
     try {
       await resend.emails.send({
         from: "Virat CRM <alerts@virat-crm.com>",
         to,
         subject,
-        html,
+        html: finalHtml,
         text,
       });
       console.log(`[Email Gateway] Dispatched HTML Email to ${to}`);

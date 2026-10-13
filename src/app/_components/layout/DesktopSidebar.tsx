@@ -20,6 +20,8 @@ import {
   RefreshCcw,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -28,6 +30,7 @@ import { api } from "@/trpc/react";
 export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ "Main": true, "Sales & Operations": true, "HR Transactions": true, "Administration": true, "Settings": true });
   const { data: user, isLoading: userLoading } = api.users.getMe.useQuery();
   const { data: rolePermissions, isLoading: permissionsLoading } =
     api.permissions.getForRole.useQuery(
@@ -63,8 +66,25 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
           hidden: !getIsFeatureEnabled("dashboard"),
         },
         {
+          href: "/crm",
+          label: "Customer Master",
+          icon: Contact,
+          hidden: !getIsFeatureEnabled("crm"),
+        },
+      ],
+    },
+    {
+      title: "Sales & Operations",
+      links: [
+        {
           href: "/sales",
           label: "Sales Register",
+          icon: ShoppingBag,
+          hidden: !getIsFeatureEnabled("sales"),
+        },
+        {
+          href: "/advances",
+          label: "Advance Register",
           icon: ShoppingBag,
           hidden: !getIsFeatureEnabled("sales"),
         },
@@ -81,12 +101,6 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
           hidden: !getIsFeatureEnabled("inventory"),
         },
         {
-          href: "/crm",
-          label: "Customer Master",
-          icon: Contact,
-          hidden: !getIsFeatureEnabled("crm"),
-        },
-        {
           href: "/reports",
           label: "Daily Reports",
           icon: FileText,
@@ -98,17 +112,22 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
           icon: FileText,
           hidden: !getIsFeatureEnabled("reports"),
         },
-        {
-          href: "/reports/field-support",
-          label: "Field Support Reports",
-          icon: FileText,
-          hidden: !getIsFeatureEnabled("field-support") || !(isManager || isAdmin),
-        },
+      ],
+    },
+    {
+      title: "HR Transactions",
+      links: [
         {
           href: "/attendance",
           label: "Workforce",
           icon: Users,
           hidden: !getIsFeatureEnabled("workforce"),
+        },
+        {
+          href: "/reports/field-support",
+          label: "Field Support Reports",
+          icon: FileText,
+          hidden: !getIsFeatureEnabled("field-support") || !(isManager || isAdmin),
         },
         {
           href: "/documents",
@@ -172,6 +191,12 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
       title: "Settings",
       links: [
         {
+          href: "/admin/manage",
+          label: "Manage Organization",
+          icon: Sliders,
+          hidden: !isAdmin,
+        },
+        {
           href: "/admin/developer",
           label: "Developer Console",
           icon: Sliders,
@@ -179,13 +204,12 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
         },
         { href: "/profile", label: "My Profile", icon: User },
       ],
-    },
-  ];
+    },  ];
 
   return (
     <div
       className={cn(
-        "border-border flex flex-col h-full transition-all duration-300 ease-in-out bg-green-50/40 dark:bg-green-950/20",
+        "border-border flex flex-col sticky top-0 h-screen transition-all duration-300 ease-in-out bg-green-50/40 dark:bg-green-950/20",
         !isMobile && "hidden border-r md:flex",
         isCollapsed ? "w-20" : "w-64"
       )}
@@ -203,7 +227,7 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
           {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
         </button>
       </div>
-      <div className="no-scrollbar h-[calc(100vh-64px)] overflow-y-auto p-3">
+      <div className="no-scrollbar h-[calc(100vh-64px)] overflow-y-auto p-4">
         <nav className="space-y-4">
           {linkCategories.map((category, index) => {
             const visibleLinks = category.links.filter((l) => !l.hidden);
@@ -212,14 +236,18 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
             return (
               <div key={category.title} className="space-y-1">
                 {!isCollapsed && (
-                  <h3 className="px-4 text-xs font-bold tracking-wider text-slate-400 uppercase mb-2 mt-2">
-                    {category.title}
-                  </h3>
+                  <button 
+                    onClick={() => setExpandedCategories(prev => ({...prev, [category.title]: !prev[category.title]}))}
+                    className="w-full flex items-center justify-between px-5 text-[11px] font-bold tracking-widest text-slate-400 uppercase mb-3 mt-4 hover:text-slate-600 transition-colors"
+                  >
+                    <span>{category.title}</span>
+                    {expandedCategories[category.title] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
                 )}
                 {isCollapsed && index > 0 && (
                    <div className="mx-4 my-2 border-t border-slate-200 dark:border-slate-800" />
                 )}
-                {visibleLinks.map((link) => {
+                {(isCollapsed || expandedCategories[category.title]) && visibleLinks.map((link) => {
                   const isActive =
                     pathname === link.href ||
                     (link.href !== "/" && pathname.startsWith(link.href));
@@ -231,7 +259,7 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
                       title={isCollapsed ? link.label : undefined}
                       className={cn(
                         "flex items-center rounded-xl py-3 transition-all duration-300",
-                        isCollapsed ? "justify-center px-2" : "px-4 space-x-3",
+                        isCollapsed ? "justify-center px-2" : "px-5 space-x-3",
                         isActive
                           ? "bg-primary font-semibold text-white shadow-md"
                           : "text-slate-500 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100",

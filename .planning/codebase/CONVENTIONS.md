@@ -1,20 +1,8 @@
----
-focus: quality
-last_mapped_commit: HEAD
-date: 2026-05-29
----
+# CONVENTIONS
 
-# CONVENTIONS.md
-
-## Code Style
-- **TypeScript**: Strict mode enabled. Prefer `interface` or `type` for definitions.
-- **Formatting**: Prettier is used for code formatting (`pnpm format:write`). Tailwind classes are sorted automatically via `prettier-plugin-tailwindcss`.
-- **Linting**: ESLint configured with Next.js defaults and Drizzle plugin (`pnpm lint`).
-
-## Component Patterns
-- Use Server Components by default. Add `"use client"` directive only when hooks or interactivity are needed.
-- shadcn/ui components are stored in `src/components/ui/` and should rarely be modified unless global styling changes are needed.
-
-## Error Handling
-- Use `zod` for parsing and validating both environment variables and user input.
-- Return explicit `TRPCError` in backend routers for anticipated failures.
+- **Formatting:** Prettier is used for code formatting (`pnpm format:write`).
+- **Linting:** ESLint is configured for code quality (`pnpm lint`).
+- **Typing:** Strict TypeScript typing is enforced.
+- **Components:** UI components are primarily located in `src/app/_components` or `src/components`, utilizing Tailwind CSS utility classes and Shadcn UI patterns.
+- **API:** All data fetching and mutation should happen via tRPC procedures defined in `src/server/api/routers/` to ensure end-to-end type safety.
+- **Database:** Changes to the database schema must be done via Drizzle ORM in `src/server/db/schema/` followed by generating and migrating (`pnpm db:generate`, `pnpm db:migrate`).

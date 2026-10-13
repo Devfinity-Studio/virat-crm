@@ -1,17 +1,6 @@
----
-focus: concerns
-last_mapped_commit: HEAD
-date: 2026-05-29
----
+# CONCERNS
 
-# CONCERNS.md
-
-## Technical Debt
-- **Type Safety on Client Boundaries**: Ensure `zod` validation is correctly matching the database schema to avoid unexpected runtime errors.
-- **Large Dependency Tree**: The application includes many heavy dependencies (Leaflet, jspdf, exceljs, aws-sdk). Bundle size should be monitored, especially for client-side load times.
-
-## Potential Fragility
-- **Database Migrations**: Be careful with `drizzle-kit push` in production; prefer `drizzle-kit migrate` with versioned migration files for production safety.
-
-## Security
-- Authentication relies on custom implementations (`bcryptjs`, `jose`) instead of a fully managed provider (like NextAuth or Clerk). Ensure these flows (token signing, password hashing) are rigorously verified against security vulnerabilities.
+- **Test Coverage:** Test coverage appears low, with minimal files in the `tests/` directory.
+- **File Sizes:** Some files, especially patching scripts (`patch_*.py`) and older build outputs, are large and might need cleanup.
+- **Complexity in Routing:** The tRPC router structure (`src/server/api/routers/`) is growing and might require further modularization as features expand (e.g. nested routers).
+- **Mobile Compatibility:** `MOBILE-SPEC.md` and `capacitor.config.ts` suggest a mobile build, ensure web components remain responsive and Capacitor compatible.

@@ -45,11 +45,13 @@ const formSchema = z.object({
 interface CustomerFormProps {
   onSuccess?: () => void;
   isManager?: boolean;
+  initialData?: any;
 }
 
 export function CustomerForm({
   onSuccess,
   isManager = false,
+  initialData,
 }: CustomerFormProps) {
   const [isFetchingPincode, setIsFetchingPincode] = useState(false);
   const [villages, setVillages] = useState<string[]>([]);
@@ -120,7 +122,7 @@ export function CustomerForm({
               form.setValue("state", state);
               setVillages(villageList);
 
-              if (villageList.length === 1 && villageList[0]) {
+              if (villageList.length > 0 && villageList[0]) {
                 form.setValue("village", villageList[0]);
               }
             }

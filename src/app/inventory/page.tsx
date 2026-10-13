@@ -33,13 +33,14 @@ export default function InventoryPage() {
     price: "",
     category: "",
     hsnCode: "",
+    pointsPerQty: "",
   });
 
   const addProductMutation = api.inventory.addProduct.useMutation({
     onSuccess: () => {
       toast.success("Product added successfully");
       setIsAddModalOpen(false);
-      setNewProduct({ name: "", sku: "", price: "", category: "", hsnCode: "" });
+      setNewProduct({ name: "", sku: "", price: "", category: "", hsnCode: "", pointsPerQty: "" });
       void refetch();
     },
     onError: (err) => {
@@ -48,7 +49,7 @@ export default function InventoryPage() {
   });
 
   const handleAddProduct = () => {
-    if (!newProduct.name || !newProduct.sku || !newProduct.price) {
+    if (!newProduct.name || !newProduct.price) {
       toast.error("Please fill all fields");
       return;
     }
@@ -58,6 +59,7 @@ export default function InventoryPage() {
       price: parseFloat(newProduct.price),
       category: newProduct.category || undefined,
       hsnCode: newProduct.hsnCode || undefined,
+      pointsPerQty: newProduct.pointsPerQty ? parseFloat(newProduct.pointsPerQty) : undefined,
     });
   };
 
@@ -295,12 +297,13 @@ export default function InventoryPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                    SKU
+                    SKU (Auto-generated)
                   </label>
                   <input
                     type="text"
-                    placeholder="SKU-1234"
-                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm uppercase transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                    disabled
+                    placeholder="Auto-generated"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm uppercase transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800 opacity-70 cursor-not-allowed"
                     value={newProduct.sku}
                     onChange={(e) =>
                       setNewProduct({
@@ -353,6 +356,24 @@ export default function InventoryPage() {
                     value={newProduct.hsnCode}
                     onChange={(e) =>
                       setNewProduct({ ...newProduct, hsnCode: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    Points Per Qty
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 10"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                    value={newProduct.pointsPerQty}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, pointsPerQty: e.target.value })
                     }
                   />
                 </div>

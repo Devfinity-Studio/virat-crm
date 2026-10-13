@@ -16,7 +16,7 @@ export {
 } from "./leaves";
 export { products } from "./products";
 export { saleItems, saleItemsRelations } from "./saleItems";
-export { replacements, replacementsRelations } from "./replacements";
+export { replacements, replacementsRelations, replacementItems, replacementItemsRelations } from "./replacements";
 export { notifications, notificationsRelations } from "./notifications";
 export { files, filesRelations, fileEntityTypeEnum } from "./files";
 export {
@@ -40,3 +40,4 @@ export { dailyMileage, dailyMileageRelations } from "./daily_mileage";
 export { customerVisits, customerVisitsRelations } from "./customer_visits";
 export { saleAssignments, saleAssignmentsRelations } from "./saleAssignments";
 export { fieldSupportReports, fieldSupportReportItems, fieldSupportReportsRelations, fieldSupportReportItemsRelations } from "./fieldSupportReports";
+export { userDocuments, userDocumentsRelations } from "./userDocuments";

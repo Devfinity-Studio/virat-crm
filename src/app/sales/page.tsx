@@ -22,7 +22,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Plus, Check, X, Loader2, FileText, Search, Trash2, Printer } from "lucide-react";
+import { Plus, Check, X, Loader2, FileText, Search, Trash2, Printer, Download } from "lucide-react";
+import * as ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
@@ -69,7 +71,7 @@ export default function SalesDashboard() {
     isFetchingNextPage,
     refetch,
   } = api.sales.getSales.useInfiniteQuery(
-    { limit: 20, search: debouncedSearch || undefined },
+    { limit: 20, search: debouncedSearch || undefined, registerType: "Sale" },
     { getNextPageParam: (lastPage) => lastPage.nextCursor },
   );
 
@@ -98,6 +100,108 @@ export default function SalesDashboard() {
     (sale) => filter === "All" || sale.status === filter,
   );
 
+  const handleExportExcel = async () => {
+    if (!allSales || allSales.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Sales Register");
+
+    // Title Row
+    worksheet.addRow(["[U07TFQ"]);
+    const titleRow = worksheet.getRow(1);
+    titleRow.font = { bold: true, color: { argb: "FF800000" } }; // Dark red/maroon color like the image
+
+    // Header Row
+    const headers = [
+      "Sl.No",
+      "Document Month",
+      "Order No",
+      "SR NAME",
+      "GL Name",
+      "Customer Address",
+      "Mobile No",
+      "Product name",
+      "Sold Qty",
+      "Price",
+      "SaleProduct",
+      "Total Points",
+      "Total Amount",
+    ];
+    worksheet.addRow(headers);
+    const headerRow = worksheet.getRow(2);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF008080" }, // Teal color
+      };
+      cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    let slNo = 1;
+    for (const sale of allSales) {
+      const month = new Date(sale.createdAt).toLocaleString("en-US", { month: "long", year: "numeric" });
+      const srName = `${sale.user?.firstName || ""} ${sale.user?.lastName || ""}`.trim();
+      
+      if (!sale.items || sale.items.length === 0) {
+        worksheet.addRow([
+          slNo++,
+          month,
+          sale.orderNumber,
+          srName,
+          sale.customerName || "",
+          sale.deliveryAddress || sale.addressLine1 || "",
+          "", // Mobile No
+          "", // Product name
+          "", // Sold Qty
+          "", // Price
+          "", // SaleProduct
+          "", // Total Points
+          sale.invoiceAmount || "", // Total Amount
+        ]);
+      } else {
+        for (const item of sale.items) {
+          worksheet.addRow([
+            slNo++,
+            month,
+            sale.orderNumber,
+            srName,
+            sale.customerName || "",
+            sale.deliveryAddress || sale.addressLine1 || "",
+            "", // Mobile No
+            // @ts-ignore
+            item.product?.name || `Product #${item.productId}`,
+            item.quantity,
+            item.rate,
+            item.isFree ? "Free" : "Sale",
+            item.totalPts || "0",
+            item.totalAmount || "0",
+          ]);
+        }
+      }
+    }
+
+    // Auto-fit columns
+    worksheet.columns.forEach((col) => {
+      let maxLen = 10;
+      col.eachCell?.({ includeEmpty: true }, (cell) => {
+        if (cell.value) {
+          const valLen = cell.value.toString().length;
+          if (valLen > maxLen) maxLen = valLen;
+        }
+      });
+      col.width = maxLen + 2;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, "Sales_Register.xlsx");
+  };
+
   return (
     <DashboardLayout>
       <FeatureGate featureKey="sales">
@@ -112,12 +216,18 @@ export default function SalesDashboard() {
                   Track and manage all transactions in real-time.
                 </p>
               </div>
-              <Link href="/sales/new">
-                <Button size="lg" className="rounded-2xl px-6">
-                  <Plus className="mr-2 h-5 w-5" />
-                  New Entry
+              <div className="flex gap-2">
+                <Button variant="outline" size="lg" className="rounded-2xl px-4 text-emerald-700 hover:text-emerald-800 border-emerald-200 bg-emerald-50 hover:bg-emerald-100" onClick={handleExportExcel}>
+                  <Download className="mr-2 h-5 w-5" />
+                  Excel
                 </Button>
-              </Link>
+                <Link href="/sales/new">
+                  <Button size="lg" className="rounded-2xl px-6">
+                    <Plus className="mr-2 h-5 w-5" />
+                    New Entry
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -348,15 +458,15 @@ export default function SalesDashboard() {
                     </div>
 
                     <div className="pt-2">
-                      <Button
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-white"
-                        onClick={() => {
-                          window.open(`/sales/print/${selectedSale.id}`, "_blank");
-                        }}
-                      >
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print Invoice
-                      </Button>
+                        <Link
+                          href={`/sales/print/${selectedSale.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full flex items-center justify-center rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 h-9"
+                        >
+                          <Printer className="mr-2 h-4 w-4" />
+                          Print Invoice
+                        </Link>
                     </div>
 
                     {user?.role === "Admin" && (

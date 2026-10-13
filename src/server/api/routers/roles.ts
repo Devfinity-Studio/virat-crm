@@ -46,6 +46,34 @@ export const rolesRouter = createTRPCRouter({
         .returning();
     }),
 
+
+  update: adminProcedure
+    .input(
+      z.object({
+        name: z.string(),
+        description: z.string().max(256).optional(),
+        codeSeries: z.string().max(32).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const role = await ctx.db.query.roles.findFirst({
+        where: eq(roles.name, input.name),
+      });
+
+      if (!role) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Role not found." });
+      }
+
+      return await ctx.db
+        .update(roles)
+        .set({
+          description: input.description,
+          codeSeries: input.codeSeries,
+        })
+        .where(eq(roles.name, input.name))
+        .returning();
+    }),
+
   delete: adminProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async ({ ctx, input }) => {

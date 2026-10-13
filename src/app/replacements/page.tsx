@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Check, X, Loader2, FileText } from "lucide-react";
+import { Plus, Check, X, Loader2, FileText, Download } from "lucide-react";
+import * as ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import Link from "next/link";
 import { useState } from "react";
 import { FileGallery } from "@/app/_components/ui/FileGallery";
@@ -38,17 +40,93 @@ export default function ReplacementsDashboard() {
     replacements?.filter((req) => filter === "All" || req.status === filter) ??
     [];
 
+  const handleExportExcel = async () => {
+    if (!filteredReplacements || filteredReplacements.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Replacement Register");
+
+    // Title Row
+    worksheet.addRow(["[U07TFQ"]);
+    const titleRow = worksheet.getRow(1);
+    titleRow.font = { bold: true, color: { argb: "FF800000" } }; // Dark red/maroon color like the image
+
+    // Header Row
+    const headers = [
+      "Sl.No",
+      "Request Date",
+      "Replacement ID",
+      "Original Order No",
+      "Agent Name",
+      "Reason",
+      "Status",
+    ];
+    worksheet.addRow(headers);
+    const headerRow = worksheet.getRow(2);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF008080" }, // Teal color
+      };
+      cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    let slNo = 1;
+    for (const req of filteredReplacements) {
+      const requestDate = new Date(req.createdAt).toLocaleDateString("en-US");
+      const agentName = `${req.user?.firstName || ""} ${req.user?.lastName || ""}`.trim();
+      const orderNo = req.sale?.orderNumber || req.originalSaleId.toString();
+
+      worksheet.addRow([
+        slNo++,
+        requestDate,
+        req.id,
+        orderNo,
+        agentName,
+        req.reason,
+        req.status,
+      ]);
+    }
+
+    // Auto-fit columns
+    worksheet.columns.forEach((col) => {
+      let maxLen = 10;
+      col.eachCell?.({ includeEmpty: true }, (cell) => {
+        if (cell.value) {
+          const valLen = cell.value.toString().length;
+          if (valLen > maxLen) maxLen = valLen;
+        }
+      });
+      col.width = maxLen + 2;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, "Replacement_Register.xlsx");
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Replacements</h1>
-          <Link href="/replacements/new">
-            <Button size="sm" className="h-9">
-              <Plus className="mr-2 h-4 w-4" />
-              Submit Request
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="h-9 text-emerald-700 hover:text-emerald-800 border-emerald-200 bg-emerald-50 hover:bg-emerald-100" onClick={handleExportExcel}>
+              <Download className="mr-2 h-4 w-4" />
+              Excel
             </Button>
-          </Link>
+            <Link href="/replacements/new">
+              <Button size="sm" className="h-9">
+                <Plus className="mr-2 h-4 w-4" />
+                Submit Request
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="scrollbar-hide flex space-x-2 overflow-x-auto pb-2">

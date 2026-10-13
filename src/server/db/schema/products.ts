@@ -18,6 +18,7 @@ export const products = createTable("product", {
   hsnCode: varchar("hsn_code", { length: 50 }),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   minThreshold: integer("min_threshold").notNull().default(10),
+  pointsPerQty: numeric("points_per_qty", { precision: 10, scale: 2 }).default("0"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

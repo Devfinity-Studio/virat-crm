@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">virat-crm</string>
     <string name="title_activity_main">virat-crm</string>
-    <string name="package_name">com.example.app</string>
-    <string name="custom_url_scheme">com.example.app</string>
+    <string name="package_name">com.devfinity.viratcrm</string>
+    <string name="custom_url_scheme">com.devfinity.viratcrm</string>
 </resources>

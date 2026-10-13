@@ -118,9 +118,10 @@ export default function SalePrintLayout() {
   const amountInWords = numberToWords(Math.round(finalTotalAmount));
 
   return (
-    <div className="min-h-screen bg-white text-black p-8 font-sans">
-      <div className="mx-auto max-w-4xl">
-        <div className="border-2 border-black p-4">
+    <div className="min-h-screen bg-gray-100 text-black p-2 sm:p-8 font-sans">
+      <div className="w-full overflow-x-auto print:overflow-visible">
+        <div className="mx-auto max-w-4xl min-w-[800px] print:min-w-0 print:w-full bg-white shadow-md print:shadow-none mb-8">
+          <div className="border-2 border-black p-6 sm:p-8 m-2 sm:m-0 print:m-0 print:border-0">
           {/* Header */}
           <div className="text-center font-bold text-xl uppercase mb-4 tracking-widest border-b-2 border-black pb-2">
             Tax Invoice
@@ -141,7 +142,7 @@ export default function SalePrintLayout() {
             </div>
             <div className="w-32 h-32 relative flex-shrink-0">
               <Image
-                src="/logo.webp"
+                src="/logo-removebg-preview.png"
                 alt="Virat Bio Plaantec Logo"
                 fill
                 className="object-contain"
@@ -180,7 +181,9 @@ export default function SalePrintLayout() {
               {sale.items.map((item, index) => (
                 <tr key={item.id} className="border-b border-gray-300">
                   <td className="border-r border-black p-2 text-center">{index + 1}</td>
-                  <td className="border-r border-black p-2">{item.product.name}</td>
+                  <td className="border-r border-black p-2">
+                    {item.product.name} {item.isFree ? <span className="font-semibold text-gray-600">(Free)</span> : ""}
+                  </td>
                   <td className="border-r border-black p-2">{(item.product as any).category || "-"}</td>
                   <td className="border-r border-black p-2">{(item.product as any).hsnCode || "-"}</td>
                   <td className="border-r border-black p-2 text-right">{item.quantity}</td>
@@ -238,6 +241,7 @@ export default function SalePrintLayout() {
               Authorized Signature
             </div>
           </div>
+        </div>
         </div>
       </div>
       <style dangerouslySetInnerHTML={{__html: `

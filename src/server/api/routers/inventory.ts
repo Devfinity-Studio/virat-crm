@@ -85,6 +85,7 @@ export const inventoryRouter = createTRPCRouter({
           name: z.string(),
           sku: z.string(),
           price: z.string(),
+          pointsPerQty: z.string().nullable().optional(),
         }),
       ),
     )
@@ -95,6 +96,7 @@ export const inventoryRouter = createTRPCRouter({
         name: item.name,
         sku: item.sku,
         price: item.price.toString(),
+        pointsPerQty: item.pointsPerQty?.toString(),
       }));
     }),
 
@@ -352,12 +354,13 @@ export const inventoryRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().min(1),
-        sku: z.string().min(1),
+        sku: z.string().optional(),
         price: z.number().min(0),
         category: z.string().optional(),
         brand: z.string().optional(),
         hsnCode: z.string().optional(),
         minThreshold: z.number().min(0).optional(),
+        pointsPerQty: z.number().min(0).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -374,12 +377,13 @@ export const inventoryRouter = createTRPCRouter({
         .insert(products)
         .values({
           name: input.name,
-          sku: input.sku,
+          sku: input.sku || `PRD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           price: input.price.toString(),
           category: input.category,
           brand: input.brand,
           hsnCode: input.hsnCode,
           minThreshold: input.minThreshold ?? 10,
+          pointsPerQty: input.pointsPerQty ? input.pointsPerQty.toString() : "0",
         })
         .returning();
 

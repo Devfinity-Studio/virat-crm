@@ -20,6 +20,14 @@
 
 - **FIX-01**: **Submission Flow**: Diagnose and fix the "Submit Daily Report" form/page which is currently non-functional.
 
+## 5. Employee Profiles (`EMP-xx`)
+
+- **EMP-01**: **Custom Date of Joining**: The "Date of Joining" field in the Add Employee form must allow employers to input a custom date instead of defaulting to the current date.
+- **EMP-02**: **Document & Photo Upload**: Support uploading and naming multiple PDF documents and a profile photo for each employee.
+- **EMP-03**: **Employee Profile View**: Clicking an employee on the employee list page should open a dedicated profile view page for that employee.
+- **EMP-04**: **Password Reset**: Provide an option on the employee profile page to change the employee's login password.
+- **EMP-05**: **Active Sessions Display**: Display all devices/sessions where the employee is currently logged in on their profile page.
+
 ## Traceability
 
 | REQ-ID    | Phase | Status |
@@ -32,3 +40,8 @@
 | VIS-01    | 51    | [ ]    |
 | VIS-02    | 51    | [ ]    |
 | FIX-01    | 48    | [x]    |
+| EMP-01    | 52    | [ ]    |
+| EMP-02    | 52    | [ ]    |
+| EMP-03    | 52    | [ ]    |
+| EMP-04    | 52    | [ ]    |
+| EMP-05    | 52    | [ ]    |
