@@ -8,6 +8,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { users } from "@/server/db/schema/users";
 import { roles } from "@/server/db/schema/roles";
+import { rolePermissions } from "@/server/db/schema/rolePermissions";
 import { eq, or, sql, desc, like, and, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import {
@@ -298,17 +299,18 @@ export const usersRouter = createTRPCRouter({
         joiningRole: z.string().optional(),
                 password: z.string().min(6),
         profilePhoto: z.string().optional(),
-        documents: z.array(z.object({
-          name: z.string(),
-          url: z.string(),
-          key: z.string(),
-          mimeType: z.string().optional(),
-          size: z.number().optional()
-        })).refine(docs => {
-          const required = ["10th marksheet", "12th marksheet", "character certificate", "stamp papers", "requirement form"];
-          const provided = docs.map(d => d.name);
-          return required.every(r => provided.includes(r));
-        }, "All 5 required documents must be uploaded"),
+        documents: z
+          .array(
+            z.object({
+              name: z.string(),
+              url: z.string(),
+              key: z.string(),
+              mimeType: z.string().optional(),
+              size: z.number().optional(),
+            }),
+          )
+          .optional()
+          .default([]),
         promotionDate: z.date().optional(),
         role: z.string().min(2).max(64),
         branchId: z.number(),
@@ -328,6 +330,41 @@ export const usersRouter = createTRPCRouter({
           code: "FORBIDDEN",
           message: "Only developers can assign the Developer role",
         });
+      }
+
+      // Check if user's role has permission to add employee without documents
+      const bypassDocsPerm = await ctx.db.query.rolePermissions.findFirst({
+        where: and(
+          eq(rolePermissions.role, ctx.dbUser.role),
+          eq(rolePermissions.featureKey, "add-employee-without-docs"),
+        ),
+      });
+
+      const canBypassDocs =
+        ctx.dbUser.role === "Developer" ||
+        (bypassDocsPerm !== undefined
+          ? bypassDocsPerm.isEnabled
+          : ctx.dbUser.role === "Admin");
+
+      if (!canBypassDocs) {
+        const required = [
+          "10th marksheet",
+          "12th marksheet",
+          "character certificate",
+          "stamp papers",
+          "requirement form",
+        ];
+        const provided = (input.documents ?? []).map((d) =>
+          d.name.toLowerCase().trim(),
+        );
+        const hasAllDocs = required.every((r) => provided.includes(r));
+        if (!hasAllDocs) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "All 5 required documents must be uploaded. To add an employee without documents, enable 'Add Employee Without Documents' in Feature Access management.",
+          });
+        }
       }
 
       // Max active users license limit check

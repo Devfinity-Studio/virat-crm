@@ -108,6 +108,13 @@ describe("Feature Access Permissions Sync (DEBT-04)", () => {
     expect(getDefaultPermission("Employee", "reports")).toBe(true);
   });
 
+  it("should permit add-employee-without-docs for Admin/Developer and restrict for Manager/Employee by default", () => {
+    expect(getDefaultPermission("Developer", "add-employee-without-docs")).toBe(true);
+    expect(getDefaultPermission("Admin", "add-employee-without-docs")).toBe(true);
+    expect(getDefaultPermission("Manager", "add-employee-without-docs")).toBe(false);
+    expect(getDefaultPermission("Employee", "add-employee-without-docs")).toBe(false);
+  });
+
   it("should insert missing feature permission entries into DB mock", async () => {
     const mockInserted: any[] = [];
     const mockDb = {
@@ -126,9 +133,9 @@ describe("Feature Access Permissions Sync (DEBT-04)", () => {
     };
 
     const count = await syncDefaultRolePermissions(mockDb);
-    // 4 base roles * 12 features = 48 entries
-    expect(count).toBe(48);
-    expect(mockInserted.length).toBe(48);
+    // 4 base roles * 13 features = 52 entries
+    expect(count).toBe(52);
+    expect(mockInserted.length).toBe(52);
     const adminPanelEntry = mockInserted.find(
       (e) => e.role === "Employee" && e.featureKey === "admin",
     );
@@ -138,5 +145,10 @@ describe("Feature Access Permissions Sync (DEBT-04)", () => {
       (e) => e.role === "Admin" && e.featureKey === "admin",
     );
     expect(adminEntry?.isEnabled).toBe(true);
+
+    const docBypassEntry = mockInserted.find(
+      (e) => e.role === "Admin" && e.featureKey === "add-employee-without-docs",
+    );
+    expect(docBypassEntry?.isEnabled).toBe(true);
   });
 });

@@ -14,6 +14,7 @@ export const SYSTEM_FEATURES = [
   "org-chart",
   "inventory",
   "admin",
+  "add-employee-without-docs",
 ] as const;
 
 export type SystemFeatureKey = (typeof SYSTEM_FEATURES)[number];
@@ -26,7 +27,7 @@ export function getDefaultPermission(role: string, feature: string): boolean {
     return true;
   }
   if (role === "Manager") {
-    return feature !== "admin";
+    return feature !== "admin" && feature !== "add-employee-without-docs";
   }
   if (role === "Employee") {
     return [
