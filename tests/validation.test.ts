@@ -353,19 +353,26 @@ function testLowStockAlerts() {
   console.log("✔ Real-Time Low Stock Alerts Tests Passed!");
 }
 
-function runAll() {
-  try {
-    testPincodeValidation();
-    testRBAC();
-    testGPSViolationAlert();
-    testBranchIsolation();
-    testLowStockAlerts();
-    console.log("All automated tests passed successfully.");
-    process.exit(0);
-  } catch (err) {
-    console.error("Test failed:", err);
-    process.exit(1);
-  }
-}
+import { describe, it } from "vitest";
 
-runAll();
+describe("Automated Validation Tests", () => {
+  it("should validate postal pincodes", () => {
+    testPincodeValidation();
+  });
+
+  it("should validate RBAC logic", () => {
+    testRBAC();
+  });
+
+  it("should validate GPS violation alerts", () => {
+    testGPSViolationAlert();
+  });
+
+  it("should validate branch isolation", () => {
+    testBranchIsolation();
+  });
+
+  it("should validate low stock alerts", () => {
+    testLowStockAlerts();
+  });
+});

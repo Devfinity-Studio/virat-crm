@@ -53,13 +53,19 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
   
   const [scope, setScope] = useState<"individual" | "management" | "branch">("individual");
   const [branchId, setBranchId] = useState<string>("");
+  const [targetUserId, setTargetUserId] = useState<string>("");
+
+  const { data: selectableUsers } = api.reports.getSelectableUsers.useQuery(undefined, {
+    enabled: isManager || isAdmin,
+  });
 
   const { data: branches } = api.users.getPublicBranches.useQuery(undefined, {
     enabled: isAdmin,
   });
 
   const { data: reports, isLoading } = api.dailyReports.listScopedReports.useQuery({
-    scope: isManager ? scope : "individual",
+    scope: isManager || isAdmin ? scope : "individual",
+    targetId: targetUserId ? targetUserId : undefined,
     branchId: scope === "branch" && branchId ? parseInt(branchId) : undefined,
     limit: 50,
   });
@@ -68,7 +74,7 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
     (report) =>
       report.content.toLowerCase().includes(search.toLowerCase()) ||
       (report.customer?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-      (isManager &&
+      ((isManager || isAdmin) &&
         `${report.user.firstName} ${report.user.lastName}`
           .toLowerCase()
           .includes(search.toLowerCase())),
@@ -76,21 +82,27 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Scope Selector for Managers */}
-      {isManager && (
+      {/* Scope Selector for Managers & Admins */}
+      {(isManager || isAdmin) && (
         <div className="flex flex-col gap-4">
           <div className="flex gap-2 p-1 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200">
             <Button
               variant={scope === "individual" ? "default" : "ghost"}
               className={`flex-1 rounded-lg font-bold shadow-none ${scope === "individual" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
-              onClick={() => setScope("individual")}
+              onClick={() => {
+                setScope("individual");
+                setBranchId("");
+              }}
             >
               My Reports
             </Button>
             <Button
               variant={scope === "management" ? "default" : "ghost"}
               className={`flex-1 rounded-lg font-bold shadow-none ${scope === "management" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
-              onClick={() => setScope("management")}
+              onClick={() => {
+                setScope("management");
+                setBranchId("");
+              }}
             >
               Team Reports
             </Button>
@@ -98,29 +110,56 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
               <Button
                 variant={scope === "branch" ? "default" : "ghost"}
                 className={`flex-1 rounded-lg font-bold shadow-none ${scope === "branch" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
-                onClick={() => setScope("branch")}
+                onClick={() => {
+                  setScope("branch");
+                  setTargetUserId("");
+                }}
               >
                 Branch Reports
               </Button>
             )}
           </div>
           
-          {scope === "branch" && isAdmin && (
-            <div className="flex items-center gap-2">
-              <Select value={branchId} onValueChange={setBranchId}>
-                <SelectTrigger className="w-[200px] rounded-xl border-2 border-slate-200 bg-white font-bold shadow-sm focus:ring-0">
-                  <SelectValue placeholder="Select a branch..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-2 border-slate-200">
-                  {branches?.map((b) => (
-                    <SelectItem key={b.id} value={b.id.toString()} className="font-medium">
-                      {b.name}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Target User Selector for Admins/Managers to inspect specific individuals (REP-03) */}
+            {(isAdmin || (isManager && scope === "management")) && selectableUsers && selectableUsers.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Select value={targetUserId} onValueChange={(val) => setTargetUserId(val === "all" ? "" : val)}>
+                  <SelectTrigger className="w-[220px] rounded-xl border-2 border-slate-200 bg-white font-bold shadow-sm focus:ring-0">
+                    <SelectValue placeholder="All Team Members" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-2 border-slate-200 max-h-72">
+                    <SelectItem value="all" className="font-medium text-slate-500">
+                      All Team Members
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                    {selectableUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id} className="font-medium">
+                        {u.firstName} {u.lastName} ({u.employeeCode})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Branch Selector for Admins */}
+            {scope === "branch" && isAdmin && (
+              <div className="flex items-center gap-2">
+                <Select value={branchId} onValueChange={setBranchId}>
+                  <SelectTrigger className="w-[200px] rounded-xl border-2 border-slate-200 bg-white font-bold shadow-sm focus:ring-0">
+                    <SelectValue placeholder="Select a branch..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-2 border-slate-200">
+                    {branches?.map((b) => (
+                      <SelectItem key={b.id} value={b.id.toString()} className="font-medium">
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

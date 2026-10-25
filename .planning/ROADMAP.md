@@ -10,7 +10,7 @@
   - Goal: Diagnose and resolve the issue preventing users from submitting Daily Activity Reports.
   - Requirements: FIX-01
 
-- **Phase 49: Role-Based Report Scoping & Hierarchy Aggregation**
+- **Phase 49: Role-Based Report Scoping & Hierarchy Aggregation [COMPLETED]**
   - Goal: Ensure employees only see their own reports. Implement manager aggregations that recursively calculate reports for all employees under them in the M:N graph hierarchy. Provide Admins unrestricted selection capabilities.
   - Requirements: REP-01, REP-02, REP-03
 

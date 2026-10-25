@@ -18,8 +18,13 @@ export function MileageReportList({ isManager, isAdmin }: { isManager: boolean, 
   >("30d");
   const [scope, setScope] = useState<
     "individual" | "team" | "management" | "branch"
-  >(isManager ? "team" : "individual");
+  >(isManager || isAdmin ? "management" : "individual");
   const [branchId, setBranchId] = useState<string>("");
+  const [targetUserId, setTargetUserId] = useState<string>("");
+
+  const { data: selectableUsers } = api.reports.getSelectableUsers.useQuery(undefined, {
+    enabled: isManager || isAdmin,
+  });
 
   const { data: branches } = api.users.getPublicBranches.useQuery(undefined, {
     enabled: isAdmin,
@@ -27,7 +32,8 @@ export function MileageReportList({ isManager, isAdmin }: { isManager: boolean, 
 
   const { data, isLoading, refetch } = api.reports.getMileageReport.useQuery({
     preset,
-    scope,
+    scope: isManager || isAdmin ? scope : "individual",
+    targetId: targetUserId ? targetUserId : undefined,
     branchId: scope === "branch" && branchId ? parseInt(branchId) : undefined,
   });
 
@@ -85,22 +91,50 @@ export function MileageReportList({ isManager, isAdmin }: { isManager: boolean, 
             </SelectContent>
           </Select>
 
-          {isManager && (
-            <div className="flex gap-3">
-              <Select value={scope} onValueChange={(val: any) => setScope(val)}>
-                <SelectTrigger className="w-[160px] rounded-xl border-slate-200 bg-white shadow-sm">
+          {(isManager || isAdmin) && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Select
+                value={scope}
+                onValueChange={(val: any) => {
+                  setScope(val);
+                  if (val !== "branch") setBranchId("");
+                  if (val === "individual") setTargetUserId("");
+                }}
+              >
+                <SelectTrigger className="w-[160px] rounded-xl border-slate-200 bg-white shadow-sm font-semibold">
                   <SelectValue placeholder="Scope" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="individual">My Mileage</SelectItem>
-                  <SelectItem value="team">My Team</SelectItem>
+                  <SelectItem value="team">Direct Team</SelectItem>
+                  <SelectItem value="management">Team Hierarchy</SelectItem>
                   {isAdmin && <SelectItem value="branch">Branch Reports</SelectItem>}
                 </SelectContent>
               </Select>
+
+              {/* Target User Selector for Admins or Managers viewing team */}
+              {(isAdmin || (isManager && scope !== "individual")) && selectableUsers && selectableUsers.length > 0 && (
+                <Select
+                  value={targetUserId}
+                  onValueChange={(val) => setTargetUserId(val === "all" ? "" : val)}
+                >
+                  <SelectTrigger className="w-[180px] rounded-xl border-slate-200 bg-white shadow-sm font-medium">
+                    <SelectValue placeholder="All Members" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    <SelectItem value="all">All Members</SelectItem>
+                    {selectableUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.firstName} {u.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               
               {scope === "branch" && isAdmin && (
                 <Select value={branchId} onValueChange={setBranchId}>
-                  <SelectTrigger className="w-[180px] rounded-xl border-slate-200 bg-white shadow-sm">
+                  <SelectTrigger className="w-[180px] rounded-xl border-slate-200 bg-white shadow-sm font-medium">
                     <SelectValue placeholder="Select Branch" />
                   </SelectTrigger>
                   <SelectContent>

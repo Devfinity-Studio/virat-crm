@@ -13,14 +13,15 @@ import {
 } from "@/server/db/schema";
 import { and, gte, lte, eq, sql, inArray, gt, desc } from "drizzle-orm";
 import { getDateRange } from "@/server/lib/date";
+import { resolveReportTargetUsers } from "@/server/lib/reports";
 
 export const reportsRouter = createTRPCRouter({
-  // Fetch users for selection (Admins see everyone, Managers see their team)
+  // Fetch users for selection (Admins & Devs see everyone, Managers see their team subtree, Employees see none)
   getSelectableUsers: featureProtectedProcedure("reports").query(
     async ({ ctx }) => {
       const currentUser = ctx.dbUser;
 
-      if (currentUser.role === "Admin") {
+      if (currentUser.role === "Admin" || currentUser.role === "Developer") {
         return ctx.db.query.users.findMany({
           columns: {
             id: true,
@@ -32,11 +33,25 @@ export const reportsRouter = createTRPCRouter({
         });
       }
 
-      // Manager case: Immediate team via userManagers
-      const teamMappings = await ctx.db.query.userManagers.findMany({
-        where: eq(userManagers.managerId, currentUser.id),
-      });
-      const teamIds = teamMappings.map((m) => m.userId);
+      if (currentUser.role === "Employee") {
+        // REP-01: Employees can only view themselves; no selectable users
+        return [];
+      }
+
+      // REP-02: Manager case: recursive subordinate hierarchy tree via user_managers
+      const descendantsQuery = sql`
+        WITH RECURSIVE subordinates AS (
+          SELECT user_id as id FROM "virat-crm_user_managers" WHERE manager_id = ${currentUser.id}
+          UNION
+          SELECT um.user_id as id FROM "virat-crm_user_managers" um
+          INNER JOIN subordinates s ON s.id = um.manager_id
+        )
+        SELECT id FROM subordinates;
+      `;
+      const rows = (await ctx.db.execute(descendantsQuery)) as unknown as {
+        id: string;
+      }[];
+      const teamIds = rows.map((r) => String(r.id));
       if (teamIds.length === 0) return [];
 
       return ctx.db.query.users.findMany({
@@ -63,44 +78,9 @@ export const reportsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const { start, end } = getDateRange(input.preset);
-      const currentUser = ctx.dbUser;
 
-      // 1. Identify Target Users based on Scope
-      let targetUserIds: string[] = [];
-      const effectiveId = input.targetId ?? currentUser.id;
-
-      if (input.scope === "individual") {
-        targetUserIds = [effectiveId];
-      } else if (input.scope === "team") {
-        const teamMappings = await ctx.db.query.userManagers.findMany({
-          where: eq(userManagers.managerId, effectiveId),
-        });
-        targetUserIds = teamMappings.map((m) => m.userId);
-      } else if (input.scope === "branch") {
-        // Only Admins can see the whole branch report directly
-        if (currentUser.role !== "Admin")
-          throw new TRPCError({ code: "FORBIDDEN" });
-        const branchUsers = await ctx.db.query.users.findMany({
-          where: eq(users.branchId, input.branchId!),
-          columns: { id: true },
-        });
-        targetUserIds = branchUsers.map((u) => u.id);
-      } else if (input.scope === "management") {
-        // Recursive CTE for management subtree via user_managers
-        const descendantsQuery = sql`
-          WITH RECURSIVE subordinates AS (
-            SELECT user_id as id FROM "virat-crm_user_managers" WHERE manager_id = ${effectiveId}
-            UNION
-            SELECT um.user_id as id FROM "virat-crm_user_managers" um
-            INNER JOIN subordinates s ON s.id = um.manager_id
-          )
-          SELECT id FROM subordinates;
-        `;
-        const rows = (await ctx.db.execute(descendantsQuery)) as unknown as {
-          id: string;
-        }[];
-        targetUserIds = rows.map((r) => String(r.id));
-      }
+      // 1. Identify Target Users based on Scope (enforcing REP-01, REP-02, REP-03)
+      const targetUserIds = await resolveReportTargetUsers(ctx, input);
 
       if (targetUserIds.length === 0 && input.scope !== "individual") {
         return {
@@ -236,42 +216,9 @@ export const reportsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const { start, end } = getDateRange(input.preset);
-      const currentUser = ctx.dbUser;
 
-      // 1. Identify Target Users based on Scope
-      let targetUserIds: string[] = [];
-      const effectiveId = input.targetId ?? currentUser.id;
-
-      if (input.scope === "individual") {
-        targetUserIds = [effectiveId];
-      } else if (input.scope === "team") {
-        const teamMappings = await ctx.db.query.userManagers.findMany({
-          where: eq(userManagers.managerId, effectiveId),
-        });
-        targetUserIds = teamMappings.map((m) => m.userId);
-      } else if (input.scope === "branch") {
-        if (currentUser.role !== "Admin")
-          throw new TRPCError({ code: "FORBIDDEN" });
-        const branchUsers = await ctx.db.query.users.findMany({
-          where: eq(users.branchId, input.branchId!),
-          columns: { id: true },
-        });
-        targetUserIds = branchUsers.map((u) => u.id);
-      } else if (input.scope === "management") {
-        const descendantsQuery = sql`
-          WITH RECURSIVE subordinates AS (
-            SELECT user_id as id FROM "virat-crm_user_managers" WHERE manager_id = ${effectiveId}
-            UNION
-            SELECT um.user_id as id FROM "virat-crm_user_managers" um
-            INNER JOIN subordinates s ON s.id = um.manager_id
-          )
-          SELECT id FROM subordinates;
-        `;
-        const rows = (await ctx.db.execute(descendantsQuery)) as unknown as {
-          id: string;
-        }[];
-        targetUserIds = rows.map((r) => String(r.id));
-      }
+      // 1. Identify Target Users based on Scope (enforcing REP-01, REP-02, REP-03)
+      const targetUserIds = await resolveReportTargetUsers(ctx, input);
 
       if (targetUserIds.length === 0 && input.scope !== "individual") {
         return { records: [], totalKm: 0 };
@@ -325,42 +272,8 @@ export const reportsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const currentUser = ctx.dbUser;
-
-      // 1. Identify Target Users based on Scope
-      let targetUserIds: string[] = [];
-      const effectiveId = input.targetId ?? currentUser.id;
-
-      if (input.scope === "individual") {
-        targetUserIds = [effectiveId];
-      } else if (input.scope === "team") {
-        const teamMappings = await ctx.db.query.userManagers.findMany({
-          where: eq(userManagers.managerId, effectiveId),
-        });
-        targetUserIds = teamMappings.map((m) => m.userId);
-      } else if (input.scope === "branch") {
-        if (currentUser.role !== "Admin")
-          throw new TRPCError({ code: "FORBIDDEN" });
-        const branchUsers = await ctx.db.query.users.findMany({
-          where: eq(users.branchId, input.branchId!),
-          columns: { id: true },
-        });
-        targetUserIds = branchUsers.map((u) => u.id);
-      } else if (input.scope === "management") {
-        const descendantsQuery = sql`
-          WITH RECURSIVE subordinates AS (
-            SELECT user_id FROM "virat-crm_user_managers" WHERE manager_id = ${effectiveId}
-            UNION
-            SELECT e.user_id FROM "virat-crm_user_managers" e
-            INNER JOIN subordinates s ON s.user_id = e.manager_id
-          )
-          SELECT user_id as id FROM subordinates;
-        `;
-        const rows = (await ctx.db.execute(descendantsQuery)) as unknown as {
-          id: string;
-        }[];
-        targetUserIds = rows.map((r) => String(r.id));
-      }
+      // 1. Identify Target Users based on Scope (enforcing REP-01, REP-02, REP-03)
+      const targetUserIds = await resolveReportTargetUsers(ctx, input);
 
       if (targetUserIds.length === 0 && input.scope !== "individual") {
         return {
@@ -597,12 +510,25 @@ export const reportsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const limit = input?.limit ?? 50;
       const cursor = input?.cursor;
+      const currentUser = ctx.dbUser;
+      const isPrivileged = currentUser.role === "Admin" || currentUser.role === "Developer";
+
+      const whereConditions: any[] = [
+        gt(sales.advancePaymentAmount, "0"),
+        cursor ? sql`${sales.id} < ${cursor}` : undefined,
+      ];
+
+      // REP-01 & REP-02: Employees only see their own sales; Managers see their branch
+      if (!isPrivileged) {
+        if (currentUser.role === "Employee") {
+          whereConditions.push(eq(sales.userId, currentUser.id));
+        } else if (currentUser.role === "Manager" && currentUser.branchId) {
+          whereConditions.push(eq(sales.branchId, currentUser.branchId));
+        }
+      }
 
       const items = await ctx.db.query.sales.findMany({
-        where: and(
-          gt(sales.advancePaymentAmount, "0"),
-          cursor ? sql`${sales.id} < ${cursor}` : undefined,
-        ),
+        where: and(...whereConditions),
         limit: limit + 1,
         with: {
           user: true,
@@ -633,9 +559,24 @@ export const reportsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const limit = input?.limit ?? 50;
       const cursor = input?.cursor;
+      const currentUser = ctx.dbUser;
+      const isPrivileged = currentUser.role === "Admin" || currentUser.role === "Developer";
+
+      const whereConditions: any[] = [
+        cursor ? sql`${replacements.id} < ${cursor}` : undefined,
+      ];
+
+      // REP-01 & REP-02: Employees only see their own replacements; Managers see their branch
+      if (!isPrivileged) {
+        if (currentUser.role === "Employee") {
+          whereConditions.push(eq(replacements.userId, currentUser.id));
+        } else if (currentUser.role === "Manager" && currentUser.branchId) {
+          whereConditions.push(eq(replacements.branchId, currentUser.branchId));
+        }
+      }
 
       const items = await ctx.db.query.replacements.findMany({
-        where: cursor ? sql`${replacements.id} < ${cursor}` : undefined,
+        where: and(...whereConditions),
         limit: limit + 1,
         with: {
           user: true,
