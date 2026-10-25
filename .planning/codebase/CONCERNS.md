@@ -2,33 +2,31 @@
 
 This document tracks identified architectural risks, technical debt, and improvement areas across the Virat CRM repository.
 
-## 1. High Priority Concerns
+## 1. Resolved Concerns (Phase 55)
 
-### 1. Root Directory Cleanup & Script Artifacts
-- **Observation:** The root project directory contains over 20 legacy patch scripts (`patch_*.py`), database check utilities (`check-users.ts`, `db-check.ts`), and multiple `build_output*.txt` logs.
-- **Risk:** Clutters repository navigation, creates confusion about the canonical way to apply migrations or fixes, and risks accidental execution of outdated patches.
-- **Remediation:** Consolidate active utility scripts into the `scripts/` directory and remove obsolete build logs and one-off Python patch files.
+### 1. Root Directory Cleanup & Script Artifacts (`DEBT-01`)
+- **Status:** Resolved in Phase 55.
+- **Action Taken:** Cleaned project root by consolidating all active diagnostic utilities (`check-*.ts`, `db-check.ts`, `sync_db.ts`) into `scripts/`, and deleting 22 obsolete Python patch scripts and 19 build logs.
 
-### 2. Mobile Background Geolocation Battery & OS Permissions
-- **Observation:** The mobile application relies on `@capacitor-community/background-geolocation` for streaming employee breadcrumbs.
-- **Risk:** Modern Android (Android 12+) and iOS versions aggressively terminate background geolocation tasks unless foreground service notifications, precise location permissions, and battery optimization exemptions are properly configured.
-- **Remediation:** Ensure Android foreground notification channel and iOS `location-always` entitlements are clearly documented in `MOBILE-SPEC.md` and validated on physical test devices.
+### 2. Mobile Background Geolocation Battery & OS Permissions (`DEBT-02`)
+- **Status:** Resolved in Phase 55.
+- **Action Taken:** Updated `MOBILE-SPEC.md` to reflect Capacitor React architecture, configured Android 13+ `POST_NOTIFICATIONS` and battery optimization entitlements in `AndroidManifest.xml`, and hardened `use-location-breadcrumbs.ts` to cache consent persistently.
 
 ### 3. Case Sensitivity in Employee Code Authentication
-- **Observation:** In earlier iterations, `src/server/api/routers/auth.ts` uppercased employee codes while `/api/auth/login` performed exact string matching, causing login failures when users entered lowercase codes (e.g. `emp001` vs `EMP001`).
-- **Status:** Resolved in recent updates by making user lookups case-insensitive across employee codes, emails, and usernames. Ensure all future authentication endpoints adhere to this standard.
+- **Status:** Resolved. User lookups are strictly case-insensitive across employee codes, emails, and usernames in authentication endpoints.
 
-## 2. Moderate Priority Concerns
+### 4. Router Complexity & File Size (`DEBT-03`)
+- **Status:** Resolved in Phase 55.
+- **Action Taken:** Extracted core transaction and business calculations into dedicated service modules:
+  - `src/server/lib/services/salesService.ts`: Stock calculations, invoice formatting, and inventory deductions.
+  - `src/server/lib/services/userService.ts`: Sequential employee code calculation, password hashing, and manager hierarchy sync.
 
-### 4. Router Complexity & File Size
-- **Observation:** Several tRPC routers in `src/server/api/routers/` (such as `sales.ts` at 980+ lines and `users.ts` at 850+ lines) encapsulate substantial domain logic directly inside procedure mutations.
-- **Risk:** Increases cognitive overhead and makes unit testing individual business rules difficult.
-- **Remediation:** Extract complex business operations (such as inventory stock adjustment calculations and report aggregation) into dedicated service layer helpers under `src/server/lib/services/`.
+### 5. Dynamic Feature Access Default States (`DEBT-04`)
+- **Status:** Resolved in Phase 55.
+- **Action Taken:** Created `src/server/lib/permissions.ts` with `syncDefaultRolePermissions` which automatically detects missing `(role, featureKey)` combinations and seeds appropriate default permissions for all roles. Hooked into `permissionsRouter.getAll`.
 
-### 5. Automated Test Coverage
-- **Observation:** While unit tests exist for postal pincodes and multi-tenant isolation, automated end-to-end (E2E) and procedure integration test coverage is currently limited.
-- **Remediation:** Establish automated testing against an in-memory or Dockerized PostgreSQL container to validate critical sales and inventory transaction flows in CI.
+## 2. Open / Future Improvement Areas
 
-### 6. Dynamic Feature Access Default States
-- **Observation:** When new features or permissions are introduced to `src/app/admin/feature-access/page.tsx`, corresponding rows must be seeded in the `rolePermissions` table.
-- **Remediation:** Implement an automatic synchronization mechanism during server initialization or database migrations that inserts missing permission rows with default values.
+### 6. Automated E2E Containerized Test Coverage
+- **Observation:** While 36 automated unit and integration tests exist (covering pincodes, RBAC, GPS alerts, branch isolation, report scoping, sales calculations, and permission sync), end-to-end browser tests against a live database container in CI can be expanded.
+- **Remediation:** Introduce Playwright E2E tests in a future milestone.

@@ -1,57 +1,64 @@
-# Virat CRM - Mobile Flutter Specification (v1.0)
+# Virat CRM - Mobile Application Specification (Capacitor Architecture v2.0)
 
 ## Overview
+Virat CRM Mobile is an enterprise hybrid mobile application built using Next.js, React, and Capacitor (`@capacitor/core`, `@capacitor/android`, `@capacitor/ios`). It provides full mobile parity for field employees with persistent authentication, offline breadcrumb synchronization, and continuous background GPS route tracking.
 
-A high-accessibility companion app for field staff. Focuses on Mandatory Connectivity, GPS Tracking, and simplified CRM workflows.
+---
 
-## Design Philosophy: "Big Button" UI
+## Architecture & Technology Stack
+- **Framework**: Next.js 15 (App Router) + React 19 + TypeScript
+- **Native Runtime**: Capacitor CLI 8 (`@capacitor/cli`, `@capacitor/core`)
+- **Native Platforms**:
+  - Android (API Level 24+ / Android 7.0 - 14+)
+  - iOS (iOS 15+)
+- **Location & Geolocation Tracking**:
+  - `@capacitor-community/background-geolocation`
+  - W3C Geolocation Web Fallback
+- **State & Server Communication**:
+  - tRPC (`@trpc/client`, `@trpc/react-query`) with React Query v5
+  - LocalStorage / IndexedDB queue for offline location breadcrumbs
 
-- **Accessibility**: Minimalist interface with large interactive elements (min-height: 80px).
-- **Typography**: Inter (Match Web UI), minimum font size 18pt for primary actions.
-- **Feedback**: Haptic feedback on all successful button presses.
-- **Color Palette**:
-  - Primary: `#3B82F6` (Blue 500)
-  - Success: `#10B981` (Emerald 500)
-  - Alert/Danger: `#EF4444` (Red 500)
-  - Background: Soft Gray/White for high contrast.
+---
 
-## Core Features
+## Background Geolocation & Foreground Service Hardening
 
-1. **Persistent Authentication**:
-   - Login via Employee Code + Password.
-   - Store JWT in `flutter_secure_storage`.
-   - Token valid for 30 days.
-2. **GPS Heartbeat (Mandatory)**:
-   - Use `flutter_background_geolocation`.
-   - Send heartbeat every 5 minutes (matches Website frequency) while app is in foreground/background.
-   - UI must show "Active Tracking" status.
-   - Alert user locally if GPS is disabled or Internet is lost.
-3. **Simplified CRM**:
-   - **Customers**: List View + Simple Search.
-   - **Propose Customer**: Single-page form with big inputs.
-   - **Sales**: Quick order entry (Select Product -> Enter Quantity -> Submit).
+### 1. Android 12+ (API 31+) & Android 14 (API 34+) Requirements
+Continuous background location on modern Android requires:
+1. **Runtime Permissions in `AndroidManifest.xml`**:
+   - `android.permission.INTERNET`
+   - `android.permission.ACCESS_FINE_LOCATION`
+   - `android.permission.ACCESS_COARSE_LOCATION`
+   - `android.permission.ACCESS_BACKGROUND_LOCATION` (Requested after coarse/fine location is granted)
+   - `android.permission.FOREGROUND_SERVICE`
+   - `android.permission.FOREGROUND_SERVICE_LOCATION` (Mandatory for Android 14+)
+   - `android.permission.POST_NOTIFICATIONS` (Android 13+)
 
-## API Integration
+2. **Persistent Foreground Service Notification**:
+   - The OS requires an ongoing, non-dismissible notification while background tracking is active.
+   - Channel Name: `Virat CRM Location Service`
+   - Notification Title: `Virat CRM Field Tracking`
+   - Notification Text: `Active location tracking for sales routes.`
+   - Notification Icon: `@mipmap/ic_launcher`
 
-- **Base URL**: `https://your-crm-domain.com/api/rest`
-- **Auth**: `Authorization: Bearer <token>`
-- **Endpoints**:
-  - `POST /auth/login`: `{ employeeCode, password }` -> `{ token, user }`
-  - `POST /heartbeat/pulse`: `{ lat, lng, status }`
-  - `GET /crm/customers`: Get branch customers.
-  - `POST /crm/propose`: Submit draft customer.
-  - `POST /sales/create`: Submit new sale.
+3. **Battery Optimization & OEM Restrictions**:
+   - Aggressive battery managers (MIUI, ColorOS, OneUI, EMUI) can terminate background tasks.
+   - Users are prompted to exclude Virat CRM from battery optimizations (`Settings > Apps > Special app access > Battery optimization > Don't optimize` or via standard "Don't kill my app" settings).
 
-## Monitoring & Compliance
+### 2. iOS 15+ CoreLocation Requirements
+- `NSLocationWhenInUseUsageDescription`: "Virat CRM needs your location to record client visits and calculate travel mileage."
+- `NSLocationAlwaysAndWhenInUseUsageDescription`: "Virat CRM tracks your route continuously in the background during work hours for mileage calculation and field safety."
+- `UIBackgroundModes`: `location`, `fetch`
 
-- The backend runs a 15-minute inactivity check.
-- If a user fails to send a heartbeat, Admins are notified immediately.
-- The app should prevent usage of CRM features if Connectivity/GPS status is red.
+---
 
-## Tech Stack (Recommended)
+## Offline Breadcrumb Sync Flow
+1. **Capture**: Location points (`latitude`, `longitude`, `accuracy`, `timestamp`) are polled at regular intervals or upon significant motion.
+2. **Buffer Queue**: If offline or network errors occur, points are appended to `localStorage["virat_crm_offline_breadcrumbs"]`.
+3. **Flush**: Upon network restoration or every sync heartbeat (5 minutes), queued points are flushed via `api.location.recordBreadcrumbs` batch mutation.
 
-- **Framework**: Flutter (Stable)
-- **State Management**: Provider or Riverpod
-- **Storage**: `flutter_secure_storage`
-- **Background Task**: `workmanager` or `flutter_background_geolocation` (Paid/Reliable)
-- **HTTP Client**: `dio`
+---
+
+## App Store & Google Play Store Compliance
+- Background location access is strictly restricted to authenticated field employees (non-Admin roles).
+- Privacy policy and terms of service are accessible before login and in-app.
+- In-app disclosures clearly explain why background location is required before triggering system permission dialogues.

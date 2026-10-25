@@ -129,14 +129,17 @@ export function useLocationBreadcrumbs() {
     }
 
     if (Capacitor.isNativePlatform()) {
-      // 1. Prompt user about strict background permissions
-      const agreed = window.confirm(
-        "Virat CRM requires 'Allow all the time' location access to accurately track your routes while the app is minimized. Please select 'Allow all the time' on the next prompt."
-      );
-      
-      if (!agreed) {
-        console.warn("User declined background location pre-prompt.");
-        return;
+      // 1. Prompt user about strict background permissions if not already accepted
+      const hasConsented = localStorage.getItem("virat_bg_loc_consented");
+      if (!hasConsented) {
+        const agreed = window.confirm(
+          "Virat CRM requires 'Allow all the time' location access to accurately track your routes while the app is minimized. Please select 'Allow all the time' on the next prompt."
+        );
+        if (!agreed) {
+          console.warn("User declined background location pre-prompt.");
+          return;
+        }
+        localStorage.setItem("virat_bg_loc_consented", "true");
       }
 
       // 2. Start Capacitor Background Geolocation
