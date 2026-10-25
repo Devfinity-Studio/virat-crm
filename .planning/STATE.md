@@ -3,7 +3,7 @@ milestone: "v11"
 milestone_name: "Reporting Intelligence & Hierarchy Analytics"
 status: "in-progress"
 progress:
-  requirements_defined: 13
+  requirements_defined: 21
   phases_planned: 1
   phases_completed: 2
 ---
