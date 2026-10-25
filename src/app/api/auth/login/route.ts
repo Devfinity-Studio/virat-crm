@@ -1,7 +1,7 @@
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema/users";
 import { branches } from "@/server/db/schema/branches";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { login } from "@/server/lib/auth";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
@@ -18,8 +18,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
   }
 
+  const cleanCode = employeeCode.trim();
   const user = await db.query.users.findFirst({
-    where: eq(users.employeeCode, employeeCode),
+    where: or(
+      eq(users.employeeCode, cleanCode),
+      eq(users.employeeCode, cleanCode.toUpperCase()),
+      eq(users.employeeCode, cleanCode.toLowerCase()),
+      eq(users.email, cleanCode.toLowerCase()),
+      eq(users.firstName, cleanCode),
+    ),
   });
 
   if (!user?.isActive) {

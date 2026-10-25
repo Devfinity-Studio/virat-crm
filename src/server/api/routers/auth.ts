@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { users, rolePermissions } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { encrypt } from "@/server/lib/auth";
 
@@ -37,8 +37,15 @@ export const authRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const cleanCode = input.employeeCode.trim();
       const user = await ctx.db.query.users.findFirst({
-        where: eq(users.employeeCode, input.employeeCode.toUpperCase()),
+        where: or(
+          eq(users.employeeCode, cleanCode),
+          eq(users.employeeCode, cleanCode.toUpperCase()),
+          eq(users.employeeCode, cleanCode.toLowerCase()),
+          eq(users.email, cleanCode.toLowerCase()),
+          eq(users.firstName, cleanCode),
+        ),
         with: {
           branch: true,
         },
