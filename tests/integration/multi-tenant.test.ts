@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { describe, it, expect } from "vitest";
 import { enforceBranchIsolation } from "../../src/server/api/trpc";
 import { TRPCError } from "@trpc/server";

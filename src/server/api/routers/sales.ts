@@ -18,6 +18,12 @@ import { eq, sql, and, desc, exists, or, ilike } from "drizzle-orm";
 import { sendNotificationToUser } from "@/server/lib/push";
 import { checkAndNotifyLowStock } from "@/server/lib/alerts";
 import { TRPCError } from "@trpc/server";
+import {
+  generateNextInvoiceId,
+  calculateSaleQuantities,
+  calculateSaleBalance,
+  decrementInventoryStock,
+} from "@/server/lib/services/salesService";
 
 export const salesRouter = createTRPCRouter({
   getNextInvoiceId: featureProtectedProcedure("sales").query(
@@ -27,18 +33,7 @@ export const salesRouter = createTRPCRouter({
         orderBy: [desc(sales.id)],
       });
 
-      if (!lastSale || !lastSale.transactionNumber) {
-        return "INV-1000";
-      }
-
-      const match = lastSale.transactionNumber.match(/(\d+)$/);
-      if (match) {
-        const num = parseInt(match[1]!, 10);
-        const prefix = lastSale.transactionNumber.slice(0, match.index);
-        return `${prefix}${num + 1}`;
-      }
-
-      return `${lastSale.transactionNumber}-1`;
+      return generateNextInvoiceId(lastSale?.transactionNumber);
     },
   ),
 
@@ -165,23 +160,7 @@ export const salesRouter = createTRPCRouter({
 
       return await ctx.db.transaction(async (tx) => {
         // 1. Stock Check & Decrement
-        for (const item of input.items) {
-          // Update or Insert inventory with negative
-          await tx
-            .insert(inventory)
-            .values({
-              productId: item.productId,
-              branchId: targetBranchId,
-              quantity: -item.quantity,
-            })
-            .onConflictDoUpdate({
-              target: [inventory.productId, inventory.branchId],
-              set: { quantity: sql`${inventory.quantity} - ${item.quantity}` },
-            });
-
-          // Trigger Low Stock Alerts
-          await checkAndNotifyLowStock(tx, targetBranchId, item.productId);
-        }
+        await decrementInventoryStock(tx, targetBranchId, input.items);
 
         // 2. Fetch Pincode Details
         let deliveryAddress = "";
@@ -206,18 +185,12 @@ export const salesRouter = createTRPCRouter({
           }
         }
 
-        let mainQty = 0;
-        let freeQty = 0;
-        for (const item of input.items) {
-          if (item.isFree) freeQty += item.quantity;
-          else mainQty += item.quantity;
-        }
-        const totalQty = mainQty + freeQty;
-
-        const invoiceAmt = parseFloat(input.invoiceAmount ?? "0");
-        const advanceAmt = parseFloat(input.advancePaymentAmount ?? "0");
-        const receivedAmt = parseFloat(input.receivedAmount ?? "0");
-        const balanceAmt = invoiceAmt - advanceAmt - receivedAmt;
+        const { mainQty, freeQty, totalQty } = calculateSaleQuantities(input.items);
+        const balanceAmt = calculateSaleBalance({
+          invoiceAmount: input.invoiceAmount,
+          advancePaymentAmount: input.advancePaymentAmount,
+          receivedAmount: input.receivedAmount,
+        });
 
         const orderNumber = input.orderNumber;
         const transactionNumber = input.transactionNumber || null;
@@ -269,10 +242,10 @@ export const salesRouter = createTRPCRouter({
               mainQty,
               freeQty,
               totalQty,
-              invoiceAmount: invoiceAmt.toString(),
-              advancePaymentAmount: advanceAmt.toString(),
-              receivedAmount: receivedAmt.toString(),
-              balanceAmount: balanceAmt.toString(),
+              invoiceAmount: input.invoiceAmount || "0",
+              advancePaymentAmount: input.advancePaymentAmount || "0",
+              receivedAmount: input.receivedAmount || "0",
+              balanceAmount: balanceAmt,
               tradeDiscount: input.tradeDiscount || "0",
               basicInvoiceValue: input.basicInvoiceValue || "0",
               cgst: input.cgst || "0",

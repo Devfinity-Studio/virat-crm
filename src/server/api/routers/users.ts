@@ -10,6 +10,10 @@ import { users } from "@/server/db/schema/users";
 import { roles } from "@/server/db/schema/roles";
 import { eq, or, sql, desc, like, and, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import {
+  calculateNextEmployeeCode,
+  syncUserManagers,
+} from "@/server/lib/services/userService";
 
 export const usersRouter = createTRPCRouter({
   signup: publicProcedure
@@ -247,82 +251,37 @@ export const usersRouter = createTRPCRouter({
     .input(z.object({ role: z.string() }))
     .query(async ({ ctx, input }) => {
       const roleData = await ctx.db.query.roles.findFirst({
-        where: eq(roles.name, input.role)
+        where: eq(roles.name, input.role),
       });
       const series = roleData?.codeSeries?.trim();
-      if (!series) return 'EMP-0001 (Auto Generated)';
-      
-      // Extract trailing digits and prefix
-      const match = series.match(/^(.*?)(\d+)$/);
-      if (!match) {
-        // If there are no trailing digits, just append 0001 as fallback
-        return `${series}0001`;
-      }
-      
-      const prefix = match[1];
-      const startNumStr = match[2];
-      const startNum = parseInt(startNumStr, 10);
-      
-      const latestUsers = await ctx.db.query.users.findMany({
-        where: like(users.employeeCode, `${prefix}%`),
-        orderBy: [desc(users.employeeCode)],
-        limit: 100
-      });
-      
-      if (latestUsers.length === 0) {
-        return series; // No users yet, return the exact starting code
-      }
-      
-      let maxNum = startNum - 1; // Base case: if we found users, we need to at least start at startNum
-      for (const u of latestUsers) {
-        const numPart = u.employeeCode.replace(prefix, '');
-        const parsed = parseInt(numPart, 10);
-        if (!isNaN(parsed) && parsed > maxNum) {
-          maxNum = parsed;
-        }
-      }
-      
-      return `${prefix}${(maxNum + 1).toString().padStart(startNumStr.length, '0')}`;
-    }),
+      if (!series) return "EMP-0001 (Auto Generated)";
 
+      const latestUsers = await ctx.db.query.users.findMany({
+        columns: { employeeCode: true },
+        limit: 200,
+      });
+
+      return calculateNextEmployeeCode(
+        series,
+        latestUsers.map((u) => u.employeeCode).filter(Boolean) as string[],
+      );
+    }),
 
   previewNextEmployeeCode: protectedProcedure
     .input(z.object({ series: z.string() }))
     .query(async ({ ctx, input }) => {
       const series = input.series.trim();
-      if (!series) return '';
-      
-      // Extract trailing digits and prefix
-      const match = series.match(/^(.*?)(\d+)$/);
-      if (!match) {
-        // If there are no trailing digits, just append 0001 as fallback
-        return `${series}0001`;
-      }
-      
-      const prefix = match[1];
-      const startNumStr = match[2];
-      const startNum = parseInt(startNumStr, 10);
-      
+      if (!series) return "";
+
       const latestUsers = await ctx.db.query.users.findMany({
-        where: like(users.employeeCode, `${prefix}%`),
-        orderBy: [desc(users.employeeCode)],
-        limit: 100
+        columns: { employeeCode: true },
+        limit: 200,
       });
-      
-      if (latestUsers.length === 0) {
-        return series; // No users yet, return the exact starting code
-      }
-      
-      let maxNum = startNum - 1; // Base case: if we found users, we need to at least start at startNum
-      for (const u of latestUsers) {
-        const numPart = u.employeeCode.replace(prefix, '');
-        const parsed = parseInt(numPart, 10);
-        if (!isNaN(parsed) && parsed > maxNum) {
-          maxNum = parsed;
-        }
-      }
-      
-      return `${prefix}${(maxNum + 1).toString().padStart(startNumStr.length, '0')}`;
+
+      return calculateNextEmployeeCode(
+        series,
+        latestUsers.map((u) => u.employeeCode).filter(Boolean) as string[],
+      );
     }),
 
   createUser: protectedProcedure
@@ -432,14 +391,7 @@ export const usersRouter = createTRPCRouter({
         .returning();
 
       if (newUser && managerIds && managerIds.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { userManagers } = require("@/server/db/schema/users");
-        await ctx.db.insert(userManagers).values(
-          managerIds.map((managerId) => ({
-            userId: newUser.id,
-            managerId,
-          })),
-        );
+        await syncUserManagers(ctx.db, newUser.id, managerIds);
       }
 
       

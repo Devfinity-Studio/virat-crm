@@ -1,7 +1,0 @@
-- [x] Phase 27: Flutter Discovery & API Architecture
-  - [x] Install `trpc-to-openapi` and update `src/server/api/trpc.ts`
-  - [x] Implement REST API handler at `src/app/api/rest/[...trpc]/route.ts`
-  - [x] Decorate `auth`, `crm`, `sales`, and `heartbeat` routers with OpenAPI metadata
-  - [x] Implement persistent JWT auth in `src/server/lib/auth.ts`
-  - [x] Create monitoring service in `src/app/api/monitoring/check/route.ts`
-  - [x] Finalize `MOBILE-SPEC.md`

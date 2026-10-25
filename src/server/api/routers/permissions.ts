@@ -7,9 +7,11 @@ import {
 import { TRPCError } from "@trpc/server";
 import { rolePermissions } from "@/server/db/schema/rolePermissions";
 import { eq, and } from "drizzle-orm";
+import { syncDefaultRolePermissions } from "@/server/lib/permissions";
 
 export const permissionsRouter = createTRPCRouter({
   getAll: adminProcedure.query(async ({ ctx }) => {
+    await syncDefaultRolePermissions(ctx.db);
     return ctx.db.select().from(rolePermissions);
   }),
 

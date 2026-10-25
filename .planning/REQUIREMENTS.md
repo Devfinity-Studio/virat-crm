@@ -28,13 +28,27 @@
 - **EMP-04**: **Password Reset**: Provide an option on the employee profile page to change the employee's login password.
 - **EMP-05**: **Active Sessions Display**: Display all devices/sessions where the employee is currently logged in on their profile page.
 
+## 6. Mobile & Legal Compliance (`CAP-xx`, `COMP-xx`)
+
+- **CAP-01**: **Mobile Application Build**: Compile web application into standalone native mobile apps for Android and iOS using Capacitor.
+- **CAP-02**: **App Store Readiness**: Ensure Google Play Store guidelines, permissions, splash screens, and icons are fulfilled.
+- **COMP-01**: **Legal Pages & Compliance**: Implement privacy policy, terms of service, cookie consent, and age verification accessible without requiring login.
+- **COMP-02**: **Accessibility & Polish**: Improve form controls, contrast, and responsive layout for mobile screens.
+
+## 7. Technical Debt Remediation (`DEBT-xx`)
+
+- **DEBT-01**: **Root Directory & Script Cleanup**: Consolidate active utility scripts into `scripts/`, remove root legacy patch scripts (`patch_*.py`) and obsolete build output logs (`build_output*.txt`).
+- **DEBT-02**: **Mobile Geolocation Entitlements & Battery Hardening**: Configure foreground notification channels and background geolocation permissions/entitlements for Android and iOS in Capacitor setup.
+- **DEBT-03**: **Router Modularization & Service Layer**: Extract complex transaction and business logic from large routers (`sales.ts`, `users.ts`) into service helpers (`src/server/lib/services/`).
+- **DEBT-04**: **Dynamic Feature Access Default Synchronization**: Implement automatic initialization sync ensuring all defined system features have default permission rows seeded in `rolePermissions`.
+
 ## Traceability
 
 | REQ-ID    | Phase | Status |
 | --------- | ----- | ------ |
-| REP-01    | 49    | [ ]    |
-| REP-02    | 49    | [ ]    |
-| REP-03    | 49    | [ ]    |
+| REP-01    | 49    | [x]    |
+| REP-02    | 49    | [x]    |
+| REP-03    | 49    | [x]    |
 | BRANCH-01 | 50    | [ ]    |
 | BRANCH-02 | 50    | [ ]    |
 | VIS-01    | 51    | [ ]    |
@@ -45,3 +59,12 @@
 | EMP-03    | 52    | [ ]    |
 | EMP-04    | 52    | [ ]    |
 | EMP-05    | 52    | [ ]    |
+| CAP-01    | 53    | [ ]    |
+| CAP-02    | 53    | [ ]    |
+| COMP-01   | 54    | [ ]    |
+| COMP-02   | 54    | [ ]    |
+| DEBT-01   | 55    | [x]    |
+| DEBT-02   | 55    | [x]    |
+| DEBT-03   | 55    | [x]    |
+| DEBT-04   | 55    | [x]    |
+
