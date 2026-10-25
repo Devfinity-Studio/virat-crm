@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Key, User, FileText, X } from "lucide-react";
+import { Key, User, FileText, X, FileCheck } from "lucide-react";
 import { GenericUploader, UploadedFile } from "@/app/_components/ui/GenericUploader";
 import { Badge } from "@/components/ui/badge";
 
 export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
   const [successData, setSuccessData] = useState<{name: string, employeeCode: string} | null>(null);
+  const [skipDocuments, setSkipDocuments] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,6 +32,18 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
     documents: {} as Record<string, UploadedFile>,
   });
   
+  const { data: currentUser } = api.users.getMe.useQuery();
+  const { data: userPermissions } = api.permissions.getForRole.useQuery(
+    { role: currentUser?.role ?? "" },
+    { enabled: !!currentUser?.role },
+  );
+
+  const canAddWithoutDocs =
+    currentUser?.role === "Developer" ||
+    (currentUser?.role === "Admin" &&
+      (userPermissions?.find((p) => p.featureKey === "add-employee-without-docs")?.isEnabled ?? true)) ||
+    !!userPermissions?.find((p) => p.featureKey === "add-employee-without-docs" && p.isEnabled);
+
   const { data: nextCode } = api.users.getNextEmployeeCode.useQuery({ role: formData.role }, { enabled: !!formData.role });
 
   const { data: branches } = api.inventory.getBranches.useQuery();
@@ -49,9 +62,11 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
     e.preventDefault();
     const requiredDocs = ["10th marksheet", "12th marksheet", "character certificate", "stamp papers", "requirement form"];
     const uploadedDocs = Object.keys(formData.documents);
-    if (!requiredDocs.every(d => uploadedDocs.includes(d))) {
-      toast.error("Please upload all 5 required documents");
-      return;
+    if (!skipDocuments && !canAddWithoutDocs) {
+      if (!requiredDocs.every(d => uploadedDocs.includes(d))) {
+        toast.error("Please upload all 5 required documents");
+        return;
+      }
     }
     if (!formData.bloodGroup) {
       toast.error("Please select a blood group");
@@ -288,42 +303,82 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
 
           {/* Documents Section */}
           <div className="space-y-4">
-            <Label className="text-base">Required Employee Documents (PDFs)</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-              {["10th marksheet", "12th marksheet", "character certificate", "stamp papers", "requirement form"].map((docType) => {
-                const doc = formData.documents[docType];
-                return (
-                  <div key={docType} className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-slate-50/50 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <Label className="capitalize text-slate-700 font-semibold">{docType}</Label>
-                      {doc && (
-                        <Button variant="ghost" size="icon" type="button" onClick={() => removeDocument(docType)} className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50">
-                          <X className="h-4 w-4" />
-                        </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <Label className="text-base text-slate-900 font-semibold flex items-center gap-1.5">
+                  Employee Documents (PDFs)
+                  {!canAddWithoutDocs && <span className="text-red-500 text-xs">*Required</span>}
+                </Label>
+                <p className="text-xs text-slate-500">
+                  {canAddWithoutDocs
+                    ? "Documents are optional for your role. You can upload them or skip."
+                    : "All 5 employee verification documents are required for onboarding."}
+                </p>
+              </div>
+
+              {canAddWithoutDocs && (
+                <div className="flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3.5 py-2">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={skipDocuments}
+                      onChange={(e) => setSkipDocuments(e.target.checked)}
+                      className="h-4 w-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-xs font-semibold text-indigo-950">
+                      Add without documents
+                    </span>
+                  </label>
+                  <Badge variant="outline" className="border-indigo-200 bg-white text-[10px] text-indigo-700 font-bold">
+                    Switch Enabled
+                  </Badge>
+                </div>
+              )}
+            </div>
+
+            {skipDocuments ? (
+              <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 p-6 text-center">
+                <FileCheck className="mx-auto h-8 w-8 text-indigo-600 mb-2" />
+                <p className="text-sm font-semibold text-indigo-900">Document uploads bypassed</p>
+                <p className="text-xs text-slate-500 mt-1">This employee will be created without mandatory document attachments.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                {["10th marksheet", "12th marksheet", "character certificate", "stamp papers", "requirement form"].map((docType) => {
+                  const doc = formData.documents[docType];
+                  return (
+                    <div key={docType} className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-slate-50/50 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <Label className="capitalize text-slate-700 font-semibold">{docType}</Label>
+                        {doc && (
+                          <Button variant="ghost" size="icon" type="button" onClick={() => removeDocument(docType)} className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50">
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {doc ? (
+                         <div className="flex items-center gap-3 overflow-hidden mt-2 p-2 bg-white rounded-lg border border-slate-100">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600">
+                              <FileText className="h-4 w-4" />
+                            </div>
+                            <div className="truncate">
+                              <p className="text-xs font-medium text-slate-900 truncate" title={doc.url}>Uploaded successfully</p>
+                            </div>
+                         </div>
+                      ) : (
+                        <div className="mt-2">
+                          <GenericUploader 
+                            label={`Upload ${docType}`} 
+                            accept="application/pdf"
+                            onUploadComplete={(f) => handleDocumentUpload(docType, f)} 
+                          />
+                        </div>
                       )}
                     </div>
-                    {doc ? (
-                       <div className="flex items-center gap-3 overflow-hidden mt-2 p-2 bg-white rounded-lg border border-slate-100">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600">
-                            <FileText className="h-4 w-4" />
-                          </div>
-                          <div className="truncate">
-                            <p className="text-xs font-medium text-slate-900 truncate" title={doc.url}>Uploaded successfully</p>
-                          </div>
-                       </div>
-                    ) : (
-                      <div className="mt-2">
-                        <GenericUploader 
-                          label={`Upload ${docType}`} 
-                          accept="application/pdf"
-                          onUploadComplete={(f) => handleDocumentUpload(docType, f)} 
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="pt-4 flex justify-end">

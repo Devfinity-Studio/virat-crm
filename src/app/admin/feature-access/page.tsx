@@ -16,6 +16,7 @@ import {
   Network,
   Contact,
   Package,
+  FileCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -92,6 +93,12 @@ const FEATURES = [
     label: "Admin Panel",
     icon: ShieldCheck,
     description: "Manage users, settings, and bulk operations",
+  },
+  {
+    key: "add-employee-without-docs",
+    label: "Add Employee Without Documents",
+    icon: FileCheck,
+    description: "Allow adding/registering employees without mandatory document uploads",
   },
 ];
 
