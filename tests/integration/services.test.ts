@@ -7,6 +7,7 @@ import {
 } from "@/server/lib/services/salesService";
 import {
   calculateNextEmployeeCode,
+  checkEmployeeCodeConflict,
   generateWelcomeEmailHtml,
 } from "@/server/lib/services/userService";
 import {
@@ -71,6 +72,33 @@ describe("User Service Routines (DEBT-03)", () => {
     const existing = ["MGR-01", "MGR-02", "MGR-03"];
     const nextCode = calculateNextEmployeeCode("MGR-01", existing);
     expect(nextCode).toBe("MGR-04");
+  });
+
+  it("should detect employee code conflicts (case-insensitive)", () => {
+    const existing = ["EMP0001", "EMP0002", "MGR-01", "DEV2415"];
+
+    // Direct match conflict
+    const directConflict = checkEmployeeCodeConflict("EMP0001", existing);
+    expect(directConflict.hasConflict).toBe(true);
+    expect(directConflict.conflictingCode).toBe("EMP0001");
+
+    // Case-insensitive match conflict
+    const lowerConflict = checkEmployeeCodeConflict("emp0002", existing);
+    expect(lowerConflict.hasConflict).toBe(true);
+    expect(lowerConflict.conflictingCode).toBe("EMP0002");
+
+    // Whitespace trimmed match conflict
+    const spaceConflict = checkEmployeeCodeConflict("  DEV2415  ", existing);
+    expect(spaceConflict.hasConflict).toBe(true);
+
+    // Empty or short code
+    expect(checkEmployeeCodeConflict("", existing).hasConflict).toBe(true);
+    expect(checkEmployeeCodeConflict("A", existing).hasConflict).toBe(true);
+
+    // Non-conflicting available code
+    const available = checkEmployeeCodeConflict("EMP0042", existing);
+    expect(available.hasConflict).toBe(false);
+    expect(available.message).toContain("is available");
   });
 
   it("should render onboarding welcome email containing employee code", () => {

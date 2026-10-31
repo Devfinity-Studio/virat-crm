@@ -3,6 +3,40 @@ import { userManagers } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 
 /**
+ * Validates a candidate employee code against an existing list of codes (case-insensitive).
+ */
+export function checkEmployeeCodeConflict(
+  candidateCode: string,
+  existingCodes: string[],
+): { hasConflict: boolean; conflictingCode?: string; message: string } {
+  const trimmed = candidateCode.trim();
+  if (!trimmed) {
+    return { hasConflict: true, message: "Employee code cannot be empty" };
+  }
+  if (trimmed.length < 2) {
+    return { hasConflict: true, message: "Employee code must be at least 2 characters long" };
+  }
+
+  const lowerCandidate = trimmed.toLowerCase();
+  const matched = existingCodes.find(
+    (code) => code && code.trim().toLowerCase() === lowerCandidate,
+  );
+
+  if (matched) {
+    return {
+      hasConflict: true,
+      conflictingCode: matched,
+      message: `Employee code "${trimmed}" conflicts with existing code "${matched}"`,
+    };
+  }
+
+  return {
+    hasConflict: false,
+    message: `Employee code "${trimmed}" is available`,
+  };
+}
+
+/**
  * Calculates the next employee code in a series given an array of existing codes.
  */
 export function calculateNextEmployeeCode(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,13 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Key, User, FileText, X, FileCheck } from "lucide-react";
+import { Key, User, FileText, X, FileCheck, CheckCircle2, AlertCircle, Loader2, Hash, Sparkles } from "lucide-react";
 import { GenericUploader, type UploadedFile } from "@/app/_components/ui/GenericUploader";
 import { Badge } from "@/components/ui/badge";
 
 export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
   const [successData, setSuccessData] = useState<{name: string, employeeCode: string} | null>(null);
   const [skipDocuments, setSkipDocuments] = useState(false);
+  const [isManualCode, setIsManualCode] = useState(false);
+  const [manualCode, setManualCode] = useState("");
+  const [debouncedCode, setDebouncedCode] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedCode(manualCode.trim());
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [manualCode]);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -49,6 +60,20 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
   const { data: managers } = api.hierarchy.getManagers.useQuery();
   const { data: roles } = api.roles.getAll.useQuery();
 
+  // Preview next auto-generated code for currently selected role
+  const { data: autoCodeData, isLoading: autoCodeLoading } =
+    api.users.getNextEmployeeCode.useQuery(
+      { role: formData.role },
+      { enabled: !isManualCode && !!formData.role },
+    );
+
+  // Live conflict check for manual employee code
+  const { data: codeCheck, isLoading: isCheckingCode } =
+    api.users.checkEmployeeCodeAvailable.useQuery(
+      { employeeCode: debouncedCode },
+      { enabled: isManualCode && debouncedCode.length > 0 },
+    );
+
   const mutation = api.users.createUser.useMutation({
     onSuccess: (data) => {
       if (data) { setSuccessData({ name: `${data.firstName} ${data.lastName}`, employeeCode: data.employeeCode }); }
@@ -75,6 +100,27 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
       toast.error("Please select a branch");
       return;
     }
+
+    if (isManualCode) {
+      const cleanCode = manualCode.trim();
+      if (!cleanCode) {
+        toast.error("Please enter a manual Employee Code or disable manual code to auto-generate.");
+        return;
+      }
+      if (cleanCode.length < 2) {
+        toast.error("Employee Code must be at least 2 characters long.");
+        return;
+      }
+      if (isCheckingCode) {
+        toast.error("Please wait while the Employee Code availability is being verified.");
+        return;
+      }
+      if (codeCheck && !codeCheck.available) {
+        toast.error(codeCheck.message || `E-Code "${cleanCode}" is already in use.`);
+        return;
+      }
+    }
+
     mutation.mutate({
       ...formData,
       branchId: formData.branchId,
@@ -83,6 +129,7 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
       bloodGroup: formData.bloodGroup,
       profilePhoto: formData.profilePhoto || undefined,
       documents: Object.keys(formData.documents).map(k => ({ url: formData.documents[k]?.url ?? "", key: formData.documents[k]?.key ?? "", mimeType: formData.documents[k]?.mimeType, size: formData.documents[k]?.size, name: k })),
+      employeeCode: isManualCode ? manualCode.trim() : undefined,
     });
   };
 
@@ -294,6 +341,104 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Employee Code (E-Code) Configuration */}
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Hash className="h-4 w-4 text-indigo-600" />
+                      Employee Code (E-Code)
+                    </Label>
+                    <p className="text-xs text-slate-500">
+                      {isManualCode
+                        ? "Enter a custom employee code. It will be verified against all existing users in real time."
+                        : "Automatically generated sequential code based on the selected role's code series."}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs hover:border-slate-300 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={isManualCode}
+                        onChange={(e) => {
+                          setIsManualCode(e.target.checked);
+                          if (!e.target.checked) {
+                            setManualCode("");
+                            setDebouncedCode("");
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs font-semibold text-slate-700">
+                        Manual E-Code
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {!isManualCode ? (
+                  <div className="flex items-center gap-2.5 text-xs text-slate-600 bg-white border border-slate-200/80 rounded-lg px-3.5 py-2.5">
+                    <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+                    <span>Auto-Generated Sequence:</span>
+                    <Badge variant="outline" className="font-mono font-semibold bg-indigo-50/50 text-indigo-700 border-indigo-200">
+                      {autoCodeLoading ? "Calculating..." : (autoCodeData || "Auto-assigned")}
+                    </Badge>
+                  </div>
+                ) : (
+                  <div className="space-y-2 pt-1">
+                    <div className="relative">
+                      <Input
+                        value={manualCode}
+                        onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. EMP001, TECH-101, 10969"
+                        className={`font-mono text-sm uppercase bg-white pr-10 ${
+                          debouncedCode.length > 0 && codeCheck
+                            ? codeCheck.available
+                              ? "border-emerald-500 focus-visible:ring-emerald-500"
+                              : "border-rose-500 focus-visible:ring-rose-500"
+                            : "border-slate-200"
+                        }`}
+                        required={isManualCode}
+                      />
+                      <div className="absolute right-3 top-2.5 flex items-center">
+                        {isCheckingCode && (
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                        )}
+                        {!isCheckingCode && debouncedCode.length > 0 && codeCheck?.available && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        )}
+                        {!isCheckingCode && debouncedCode.length > 0 && codeCheck && !codeCheck.available && (
+                          <AlertCircle className="h-4 w-4 text-rose-600" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status helper feedback */}
+                    {debouncedCode.length > 0 && (
+                      <div className="text-xs">
+                        {isCheckingCode ? (
+                          <span className="text-slate-500 flex items-center gap-1.5">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Checking availability against existing employee codes...
+                          </span>
+                        ) : codeCheck?.available ? (
+                          <span className="text-emerald-600 font-medium flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {codeCheck.message}
+                          </span>
+                        ) : (
+                          <span className="text-rose-600 font-medium flex items-center gap-1.5">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            {codeCheck?.message || `E-Code "${debouncedCode}" conflicts with an existing user.`}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
