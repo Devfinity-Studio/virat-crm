@@ -285,6 +285,42 @@ export const usersRouter = createTRPCRouter({
       );
     }),
 
+  checkEmployeeCodeAvailable: protectedProcedure
+    .input(z.object({ employeeCode: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const trimmed = input.employeeCode.trim();
+      if (!trimmed) {
+        return { available: false, message: "Employee code cannot be empty" };
+      }
+      if (trimmed.length < 2) {
+        return { available: false, message: "Employee code must be at least 2 characters" };
+      }
+
+      const existing = await ctx.db.query.users.findFirst({
+        where: sql`lower(${users.employeeCode}) = lower(${trimmed})`,
+        columns: {
+          id: true,
+          employeeCode: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+        },
+      });
+
+      if (existing) {
+        return {
+          available: false,
+          conflictWith: `${existing.firstName} ${existing.lastName} (${existing.role})`,
+          message: `E-Code "${existing.employeeCode}" is already in use by ${existing.firstName} ${existing.lastName} (${existing.role})`,
+        };
+      }
+
+      return {
+        available: true,
+        message: `E-Code "${trimmed}" is available`,
+      };
+    }),
+
   createUser: protectedProcedure
     .input(
       z.object({
@@ -380,12 +416,32 @@ export const usersRouter = createTRPCRouter({
         });
       }
 
+      // Check if user with this email already exists
+      const existingEmail = await ctx.db.query.users.findFirst({
+        where: sql`lower(${users.email}) = lower(${input.email.trim()})`,
+      });
+      if (existingEmail) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `User with email "${input.email}" already exists.`,
+        });
+      }
+
       const hashedPassword = await bcrypt.hash(input.password, 10);
 
-      
-      // Auto-generate employee code if not provided
-      let finalEmployeeCode = input.employeeCode;
-      if (!finalEmployeeCode) {
+      // Validate manual employee code or auto-generate sequentially
+      let finalEmployeeCode = input.employeeCode?.trim();
+      if (finalEmployeeCode) {
+        const existingCode = await ctx.db.query.users.findFirst({
+          where: sql`lower(${users.employeeCode}) = lower(${finalEmployeeCode})`,
+        });
+        if (existingCode) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `Employee code "${finalEmployeeCode}" is already in use by ${existingCode.firstName} ${existingCode.lastName}. Please choose a different code.`,
+          });
+        }
+      } else {
         const roleData = await ctx.db.query.roles.findFirst({
           where: eq(roles.name, input.role)
         });
