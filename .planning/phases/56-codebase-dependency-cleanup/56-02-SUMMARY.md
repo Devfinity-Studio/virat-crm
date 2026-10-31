@@ -97,3 +97,4 @@ completed: 2026-10-31
 - `Test-Path src/server/lib/communication.ts` -> False
 - `src/env.js` compiles without Twilio/Resend schema keys
 - `pnpm vitest run` -> 37 passed (37)
+

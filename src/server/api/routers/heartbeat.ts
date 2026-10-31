@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, featureProtectedProcedure } from "@/server/api/trpc";
 import { users } from "@/server/db/schema/users";
-import { breadcrumbs } from "@/server/db/schema/breadcrumbs";
+import { employeeTrackingStatus } from "@/server/db/schema/employeeTrackingStatus";
+import { employeeLocations } from "@/server/db/schema/employeeLocations";
 import { eq } from "drizzle-orm";
 import { notifyAdmins } from "@/server/lib/monitoring";
 
@@ -32,6 +33,9 @@ export const heartbeatRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db, dbUser } = ctx;
 
+      const latitude = input.lat ? parseFloat(input.lat) : undefined;
+      const longitude = input.lng ? parseFloat(input.lng) : undefined;
+
       await db
         .update(users)
         .set({
@@ -42,12 +46,34 @@ export const heartbeatRouter = createTRPCRouter({
         })
         .where(eq(users.id, dbUser.id));
 
-      if (input.lat && input.lng) {
-        await db.insert(breadcrumbs).values({
-          userId: dbUser.id,
-          latitude: parseFloat(input.lat),
-          longitude: parseFloat(input.lng),
+      await db
+        .insert(employeeTrackingStatus)
+        .values({
+          employeeId: dbUser.id,
+          lastLatitude: latitude,
+          lastLongitude: longitude,
+          lastUpdatedAt: new Date(),
+          isOnline: input.status !== "Offline",
+          locationPermissionStatus: input.status === "No GPS" ? "DISABLED" : "ALWAYS",
+        })
+        .onConflictDoUpdate({
+          target: employeeTrackingStatus.employeeId,
+          set: {
+            lastLatitude: latitude,
+            lastLongitude: longitude,
+            lastUpdatedAt: new Date(),
+            isOnline: input.status !== "Offline",
+            locationPermissionStatus: input.status === "No GPS" ? "DISABLED" : "ALWAYS",
+          },
+        });
+
+      if (latitude !== undefined && longitude !== undefined && !isNaN(latitude) && !isNaN(longitude)) {
+        await db.insert(employeeLocations).values({
+          employeeId: dbUser.id,
+          latitude,
+          longitude,
           accuracy: 10,
+          recordedAt: new Date(),
         });
       }
 

@@ -51,7 +51,7 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
 
   const mutation = api.users.createUser.useMutation({
     onSuccess: (data) => {
-      setSuccessData({ name: `${data.firstName} ${data.lastName}`, employeeCode: data.employeeCode });
+      if (data) { setSuccessData({ name: `${data.firstName} ${data.lastName}`, employeeCode: data.employeeCode }); }
       onSuccess();
     },
     onError: (e) => toast.error(e.message),
@@ -82,7 +82,7 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
       dob: formData.dob ? new Date(formData.dob) : undefined,
       bloodGroup: formData.bloodGroup,
       profilePhoto: formData.profilePhoto || undefined,
-      documents: Object.keys(formData.documents).map(k => ({ ...formData.documents[k], name: k })),
+      documents: Object.keys(formData.documents).map(k => ({ url: formData.documents[k]?.url ?? "", key: formData.documents[k]?.key ?? "", mimeType: formData.documents[k]?.mimeType, size: formData.documents[k]?.size, name: k })),
     });
   };
 

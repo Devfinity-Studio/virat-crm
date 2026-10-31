@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { db } from "@/server/db";
-import { users, breadcrumbs } from "@/server/db/schema";
+import { users, employeeLocations, employeeTrackingStatus } from "@/server/db/schema";
+import { desc } from "drizzle-orm";
 
 async function main() {
   console.log("Fetching users from database...");
@@ -12,17 +13,22 @@ async function main() {
     );
   }
 
-  console.log("\nFetching recent breadcrumbs...");
-  const recentBc = await db
+  console.log("\nFetching recent employee locations...");
+  const recentLocs = await db
     .select()
-    .from(breadcrumbs)
-    .orderBy(breadcrumbs.createdAt);
-  console.log("\n--- Recent Breadcrumbs ---");
-  for (const bc of recentBc) {
+    .from(employeeLocations)
+    .orderBy(desc(employeeLocations.recordedAt))
+    .limit(20);
+  console.log("\n--- Recent Employee Locations ---");
+  for (const loc of recentLocs) {
     console.log(
-      `User ID: ${bc.userId} | Lat: ${bc.latitude} | Lng: ${bc.longitude} | Created At: ${bc.createdAt.toISOString()}`,
+      `Employee ID: ${loc.employeeId} | Lat: ${loc.latitude} | Lng: ${loc.longitude} | Recorded At: ${loc.recordedAt.toISOString()}`,
     );
   }
+
+  const statuses = await db.select().from(employeeTrackingStatus);
+  console.log(`\nFound ${statuses.length} tracking statuses.`);
+
   process.exit(0);
 }
 

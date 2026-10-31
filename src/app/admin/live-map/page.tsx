@@ -8,8 +8,10 @@ import { db } from "@/server/db";
 import { format } from "date-fns";
 
 export default async function LiveMapPage() {
-  const activeAgents = await api.location.getLiveTeam({});
-  const onFieldCount = activeAgents.length;
+  const activeAgents = await api.location.getLiveTeam();
+  const onFieldCount = activeAgents.filter(
+    (a) => a.tracking.statusBadge === "ONLINE_TRACKING",
+  ).length;
 
   const today = format(new Date(), "yyyy-MM-dd");
   const visits = await db.query.customerVisits.findMany({

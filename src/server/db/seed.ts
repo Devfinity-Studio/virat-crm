@@ -10,7 +10,8 @@ import {
   roles,
   rolePermissions,
   systemSettings,
-  locationLogs,
+  employeeLocations,
+  employeeTrackingStatus,
   leaves,
   userManagers,
 } from "./schema";
@@ -24,7 +25,8 @@ async function main() {
   await db.execute(sql`TRUNCATE TABLE "virat-crm_system_settings" CASCADE;`);
   await db.execute(sql`TRUNCATE TABLE "virat-crm_role_permission" CASCADE;`);
   await db.execute(sql`TRUNCATE TABLE "virat-crm_stock_transfer" CASCADE;`);
-  await db.execute(sql`TRUNCATE TABLE "virat-crm_location_logs" CASCADE;`);
+  await db.execute(sql`TRUNCATE TABLE "virat-crm_employee_locations" CASCADE;`);
+  await db.execute(sql`TRUNCATE TABLE "virat-crm_employee_tracking_status" CASCADE;`);
   await db.execute(sql`TRUNCATE TABLE "virat-crm_leave" CASCADE;`);
   await db.execute(
     sql`TRUNCATE TABLE "virat-crm_inventory_transaction" CASCADE;`,
@@ -421,24 +423,29 @@ async function main() {
   await db.insert(sales).values(bulkSales as any);
   console.log("Bulk sales seeded");
 
-  // Bulk Seed Location Logs (Attendance)
+  // Bulk Seed Employee Locations & Tracking Status
   const bulkLocations = [];
   for (let i = 1; i <= 20; i++) {
-    const rDate = new Date(Date.now() - i * 86400000); // subtract days instead of hours
+    const rDate = new Date(Date.now() - i * 86400000);
     bulkLocations.push({
-      userId: employee!.id,
-      branchId: hq.id,
-      date: rDate.toISOString().split("T")[0],
-      latitude: (28.6139 + Math.random() * 0.1).toFixed(4),
-      longitude: (77.209 + Math.random() * 0.1).toFixed(4),
+      employeeId: employee!.id,
+      latitude: 28.6139 + Math.random() * 0.1,
+      longitude: 77.209 + Math.random() * 0.1,
       accuracy: 10 + Math.random() * 20,
-      frequencyMap: {},
+      isOfflineSynced: false,
       recordedAt: rDate,
-      slab: "Morning", // just use morning for each day
     });
   }
-  await db.insert(locationLogs).values(bulkLocations as any);
-  console.log("Bulk location logs seeded");
+  await db.insert(employeeLocations).values(bulkLocations as any);
+  await db.insert(employeeTrackingStatus).values({
+    employeeId: employee!.id,
+    lastLatitude: 28.6139,
+    lastLongitude: 77.209,
+    lastUpdatedAt: new Date(),
+    locationPermissionStatus: "ALWAYS",
+    isOnline: true,
+  });
+  console.log("Bulk employee locations and tracking status seeded");
 
   // Seed System Settings
   await db.insert(systemSettings).values({

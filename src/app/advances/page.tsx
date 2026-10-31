@@ -161,7 +161,7 @@ export default function AdvancesDashboard() {
           "", // Price
           "", // SaleProduct
           sale.advancePaymentAmount || "0", // Advanced Amount
-          (sale.invoiceAmount || 0) - (sale.advancePaymentAmount || 0), // Pending Amount
+          Number(sale.invoiceAmount || 0) - Number(sale.advancePaymentAmount || 0), // Pending Amount
         ]);
       } else {
         for (const item of sale.items) {
@@ -179,7 +179,7 @@ export default function AdvancesDashboard() {
             item.rate,
             item.isFree ? "Free" : "Sale",
             sale.advancePaymentAmount || "0", // Advanced Amount
-            (sale.invoiceAmount || 0) - (sale.advancePaymentAmount || 0), // Pending Amount
+            Number(sale.invoiceAmount || 0) - Number(sale.advancePaymentAmount || 0), // Pending Amount
           ]);
         }
       }
@@ -311,7 +311,7 @@ export default function AdvancesDashboard() {
                               ₹{sale?.advancePaymentAmount ?? "0"} / ₹{sale?.invoiceAmount ?? "0"}
                             </span>
                             <span className="text-xs text-rose-500 font-semibold mt-0.5">
-                              Pending: ₹{(sale?.invoiceAmount || 0) - (sale?.advancePaymentAmount || 0)}
+                              Pending: ₹{Number(sale?.invoiceAmount || 0) - Number(sale?.advancePaymentAmount || 0)}
                             </span>
                           </div>
                           <Badge

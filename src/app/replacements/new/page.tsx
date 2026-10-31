@@ -144,8 +144,8 @@ export default function NewReplacement() {
       setOriginalSaleId(fetchedSale.id);
       setBranchId(fetchedSale.branchId?.toString() || "");
       setTransactionNumber(fetchedSale.transactionNumber || "");
-      if (fetchedSale.orderDate) setOrderDate(new Date(fetchedSale.orderDate as any).toISOString().split("T")[0]);
-      if (fetchedSale.invoiceDate) setInvDate(new Date(fetchedSale.invoiceDate as any).toISOString().split("T")[0]);
+      if (fetchedSale.orderDate) setOrderDate(new Date(fetchedSale.orderDate as any).toISOString().split("T")[0] || "");
+      if (fetchedSale.invoiceDate) setInvDate(new Date(fetchedSale.invoiceDate as any).toISOString().split("T")[0] || "");
       setCmrId(fetchedSale.cmrId || "");
       setTmNo(fetchedSale.tmNo || "");
       setCustomerName(fetchedSale.customerName || "");
@@ -600,10 +600,10 @@ export default function NewReplacement() {
     <CardHeader className="flex flex-row items-center justify-between pb-2">
       <CardTitle>Sale Products <span className="text-red-500">*</span></CardTitle>
       <div className="flex gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => setSaleItems([{ id: Date.now(), productId: "", quantity: "1", rate: "", amount: "", ptsPerQty: "", totalPts: "" }])}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setSaleItems([{ id: Date.now(), productId: "", originalQuantity: 0, quantity: "1", rate: "", amount: "", ptsPerQty: "", totalPts: "" }])}>
           <X className="w-4 h-4 mr-1 text-red-500"/> Clear
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => setSaleItems([...saleItems, { id: Date.now(), productId: "", quantity: "1", rate: "", amount: "", ptsPerQty: "", totalPts: "" }])}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setSaleItems([...saleItems, { id: Date.now(), productId: "", originalQuantity: 0, quantity: "1", rate: "", amount: "", ptsPerQty: "", totalPts: "" }])}>
           <Plus className="w-4 h-4 mr-1 text-green-500"/> Add Row
         </Button>
       </div>
@@ -647,10 +647,10 @@ export default function NewReplacement() {
     <CardHeader className="flex flex-row items-center justify-between pb-2">
       <CardTitle>Free Products</CardTitle>
       <div className="flex gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => setFreeItems([{ id: Date.now() + 1, productId: "", offerNumber: "", freeProduct: "", freeQty: "" }])}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setFreeItems([{ id: Date.now() + 1, productId: "", originalQuantity: 0, offerNumber: "", freeProduct: "", freeQty: "" }])}>
           <X className="w-4 h-4 mr-1 text-red-500"/> Clear
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => setFreeItems([...freeItems, { id: Date.now() + 1, productId: "", offerNumber: "", freeProduct: "", freeQty: "" }])}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setFreeItems([...freeItems, { id: Date.now() + 1, productId: "", originalQuantity: 0, offerNumber: "", freeProduct: "", freeQty: "" }])}>
           <Plus className="w-4 h-4 mr-1 text-green-500"/> Add Row
         </Button>
       </div>

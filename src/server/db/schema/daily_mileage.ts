@@ -9,8 +9,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { users } from "./users";
-import { createTable } from "./locationLogs"; // Reusing createTable pgTableCreator
+import { users, createTable } from "./users";
 
 export const dailyMileage = createTable(
   "daily_mileage",

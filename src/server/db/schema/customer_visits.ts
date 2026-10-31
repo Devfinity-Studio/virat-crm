@@ -7,9 +7,8 @@ import {
   integer,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { users } from "./users";
+import { users, createTable } from "./users";
 import { customers } from "./customers";
-import { createTable } from "./locationLogs";
 
 export const customerVisits = createTable(
   "customer_visits",
