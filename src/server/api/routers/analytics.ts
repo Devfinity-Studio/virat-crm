@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, featureProtectedProcedure } from "@/server/api/trpc";
 import {
   branches,
-  locationLogs,
+  employeeLocations,
   leaves,
   performanceSnapshots,
   sales,
@@ -15,6 +15,7 @@ import {
   lte,
   sum,
   count,
+  countDistinct,
   eq,
   sql,
   inArray,
@@ -159,15 +160,10 @@ export const analyticsRouter = createTRPCRouter({
       const effectiveBranchId =
         ctx.dbUser.role === "Admin" ? input.branchId : ctx.dbUser.branchId;
 
-      const tzDate = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
-      );
-      const year = tzDate.getFullYear();
-      const month = String(tzDate.getMonth() + 1).padStart(2, "0");
-      const day = String(tzDate.getDate()).padStart(2, "0");
-      const dateStr = `${year}-${month}-${day}`;
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
-      const filters: SQL[] = [eq(locationLogs.date, dateStr)];
+      const filters: SQL[] = [gte(employeeLocations.recordedAt, startOfDay)];
       if (effectiveBranchId) {
         const branchUsers = await ctx.db.query.users.findMany({
           where: eq(users.branchId, effectiveBranchId),
@@ -175,15 +171,15 @@ export const analyticsRouter = createTRPCRouter({
         });
         const branchUserIds = branchUsers.map((u) => u.id);
         if (branchUserIds.length > 0) {
-          filters.push(inArray(locationLogs.userId, branchUserIds));
+          filters.push(inArray(employeeLocations.employeeId, branchUserIds));
         } else {
           return { activeToday: 0, pendingLeaves: 0 };
         }
       }
 
       const [activeStaff] = await ctx.db
-        .select({ count: count(locationLogs.id) })
-        .from(locationLogs)
+        .select({ count: countDistinct(employeeLocations.employeeId) })
+        .from(employeeLocations)
         .where(and(...filters));
 
       // Leaves are branch-specific
@@ -218,14 +214,14 @@ export const analyticsRouter = createTRPCRouter({
       const stats = await ctx.db
         .select({
           userName: users.firstName,
-          logCount: count(locationLogs.id),
+          logCount: count(employeeLocations.id),
         })
-        .from(locationLogs)
-        .innerJoin(users, eq(locationLogs.userId, users.id))
+        .from(employeeLocations)
+        .innerJoin(users, eq(employeeLocations.employeeId, users.id))
         .where(
           and(
-            gte(locationLogs.recordedAt, start),
-            lte(locationLogs.recordedAt, end),
+            gte(employeeLocations.recordedAt, start),
+            lte(employeeLocations.recordedAt, end),
           ),
         )
         .groupBy(users.firstName);
@@ -272,27 +268,25 @@ export const analyticsRouter = createTRPCRouter({
         .select({
           userName: users.firstName,
           userLastName: users.lastName,
-          date: locationLogs.date,
-          slab: locationLogs.slab,
-          lat: locationLogs.latitude,
-          lng: locationLogs.longitude,
-          recordedAt: locationLogs.recordedAt,
+          lat: employeeLocations.latitude,
+          lng: employeeLocations.longitude,
+          recordedAt: employeeLocations.recordedAt,
         })
-        .from(locationLogs)
-        .innerJoin(users, eq(locationLogs.userId, users.id))
+        .from(employeeLocations)
+        .innerJoin(users, eq(employeeLocations.employeeId, users.id))
         .where(
           and(
-            gte(locationLogs.recordedAt, start),
-            lte(locationLogs.recordedAt, end),
+            gte(employeeLocations.recordedAt, start),
+            lte(employeeLocations.recordedAt, end),
           ),
         )
-        .orderBy(desc(locationLogs.recordedAt));
+        .orderBy(desc(employeeLocations.recordedAt));
 
-      const header = "Date,Time Slab,User,Latitude,Longitude,Logged At\n";
+      const header = "Date,User,Latitude,Longitude,Logged At\n";
       const rows = data
         .map(
           (l) =>
-            `${l.date},${l.slab},"${l.userName} ${l.userLastName ?? ""}",${l.lat},${l.lng},${l.recordedAt.toISOString()}`,
+            `"${l.recordedAt.toISOString().split("T")[0]}","${l.userName} ${l.userLastName ?? ""}",${l.lat},${l.lng},${l.recordedAt.toISOString()}`,
         )
         .join("\n");
 

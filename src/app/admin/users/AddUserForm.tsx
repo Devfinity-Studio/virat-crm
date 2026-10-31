@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Key, User, FileText, X, FileCheck } from "lucide-react";
-import { GenericUploader, UploadedFile } from "@/app/_components/ui/GenericUploader";
+import { GenericUploader, type UploadedFile } from "@/app/_components/ui/GenericUploader";
 import { Badge } from "@/components/ui/badge";
 
 export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
@@ -44,7 +44,6 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
       (userPermissions?.find((p) => p.featureKey === "add-employee-without-docs")?.isEnabled ?? true)) ||
     !!userPermissions?.find((p) => p.featureKey === "add-employee-without-docs" && p.isEnabled);
 
-  const { data: nextCode } = api.users.getNextEmployeeCode.useQuery({ role: formData.role }, { enabled: !!formData.role });
 
   const { data: branches } = api.inventory.getBranches.useQuery();
   const { data: managers } = api.hierarchy.getManagers.useQuery();
@@ -52,7 +51,7 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
 
   const mutation = api.users.createUser.useMutation({
     onSuccess: (data) => {
-      setSuccessData({ name: `${data.firstName} ${data.lastName}`, employeeCode: data.employeeCode });
+      if (data) { setSuccessData({ name: `${data.firstName} ${data.lastName}`, employeeCode: data.employeeCode }); }
       onSuccess();
     },
     onError: (e) => toast.error(e.message),
@@ -83,7 +82,7 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
       dob: formData.dob ? new Date(formData.dob) : undefined,
       bloodGroup: formData.bloodGroup,
       profilePhoto: formData.profilePhoto || undefined,
-      documents: Object.keys(formData.documents).map(k => ({ ...formData.documents[k], name: k })),
+      documents: Object.keys(formData.documents).map(k => ({ url: formData.documents[k]?.url ?? "", key: formData.documents[k]?.key ?? "", mimeType: formData.documents[k]?.mimeType, size: formData.documents[k]?.size, name: k })),
     });
   };
 

@@ -1,9 +1,8 @@
 "use client";
 
-import { Home, LogOut, Menu } from "lucide-react";
+import { Home, LogOut } from "lucide-react";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { useSyncManager } from "@/hooks/use-sync-manager";
-import { useLocationBreadcrumbs } from "@/hooks/use-location-breadcrumbs";
 import { RefreshCcw, WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -17,7 +16,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isSyncing, pendingCount } = useSyncManager();
   const pathname = usePathname();
   const router = useRouter();
-  useLocationBreadcrumbs();
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

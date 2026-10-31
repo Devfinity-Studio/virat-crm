@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { env } from "./src/env";
+import { env } from "@/env";
 import { sql } from "drizzle-orm";
 
 async function main() {

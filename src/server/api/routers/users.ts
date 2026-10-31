@@ -295,7 +295,7 @@ export const usersRouter = createTRPCRouter({
         fatherName: z.string().optional(),
         joiningDate: z.date().optional(),
         dob: z.date().optional(),
-        bloodGroup: z.string().min(1, "Blood Group is required"),
+        bloodGroup: z.string().optional().default("O+"),
         joiningRole: z.string().optional(),
                 password: z.string().min(6),
         profilePhoto: z.string().optional(),
@@ -427,7 +427,11 @@ export const usersRouter = createTRPCRouter({
         })
         .returning();
 
-      if (newUser && managerIds && managerIds.length > 0) {
+      if (!newUser) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create user record" });
+      }
+
+      if (managerIds && managerIds.length > 0) {
         await syncUserManagers(ctx.db, newUser.id, managerIds);
       }
 
@@ -448,7 +452,7 @@ export const usersRouter = createTRPCRouter({
       }
 
       // Dispatch onboarding Email & SMS
-      const { sendEmailAlert } = require("@/server/lib/communication");
+      const { sendEmailAlert } = await import("@/server/lib/communication");
       const appStoreLink = "https://apps.apple.com/app/virat-crm";
       const playStoreLink = "https://play.google.com/store/apps/details?id=com.virat.crm";
       const webPortalLink = "https://virat-crm.vercel.app";
@@ -611,7 +615,7 @@ export const usersRouter = createTRPCRouter({
         fatherName: z.string().optional(),
         joiningDate: z.date().optional(),
         dob: z.date().optional(),
-        bloodGroup: z.string().min(1, "Blood Group is required"),
+        bloodGroup: z.string().optional().default("O+"),
         joiningRole: z.string().optional(),
         promotionDate: z.date().optional(),
         role: z.string().min(2).max(64),

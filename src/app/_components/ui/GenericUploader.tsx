@@ -18,12 +18,14 @@ interface GenericUploaderProps {
   onUploadComplete: (file: UploadedFile) => void;
   accept?: string;
   label?: string;
+  className?: string;
 }
 
 export function GenericUploader({
   onUploadComplete,
   accept = "*/*",
-  label = "Upload file"
+  label = "Upload file",
+  className,
 }: GenericUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,13 +39,13 @@ export function GenericUploader({
     setIsUploading(true);
     try {
       // 1. Get presigned URL
-      const { uploadUrl, key, publicUrl } = await getUploadUrl.mutateAsync({
+      const { url, key } = await getUploadUrl.mutateAsync({
         fileName: file.name.replace(/[^a-zA-Z0-9.-]/g, "_"),
         fileType: file.type,
       });
 
       // 2. Upload directly to R2
-      const res = await fetch(uploadUrl, {
+      const res = await fetch(url, {
         method: "PUT",
         body: file,
         headers: {
@@ -54,6 +56,8 @@ export function GenericUploader({
       if (!res.ok) {
         throw new Error("Failed to upload file");
       }
+
+      const publicUrl = url.split("?")[0] ?? url;
 
       // 3. Return the generic file data
       onUploadComplete({
@@ -75,7 +79,7 @@ export function GenericUploader({
   };
 
   return (
-    <div>
+    <div className={cn("flex flex-col gap-2", className)}>
       <input
         type="file"
         ref={fileInputRef}
@@ -86,18 +90,21 @@ export function GenericUploader({
       <Button
         type="button"
         variant="outline"
-        onClick={() => fileInputRef.current?.click()}
         disabled={isUploading}
-        className="w-full h-auto py-4 border-dashed border-2 flex flex-col gap-2 items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/50"
+        onClick={() => fileInputRef.current?.click()}
+        className="flex items-center gap-2 border-dashed border-slate-300 hover:border-slate-400"
       >
         {isUploading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+          <>
+            <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+            <span className="text-xs">Uploading...</span>
+          </>
         ) : (
-          <Upload className="h-5 w-5" />
+          <>
+            <Upload className="h-4 w-4 text-slate-500" />
+            <span className="text-xs">{label}</span>
+          </>
         )}
-        <span className="text-sm font-medium">
-          {isUploading ? "Uploading..." : label}
-        </span>
       </Button>
     </div>
   );

@@ -4,7 +4,8 @@ import { TRPCError } from "@trpc/server";
 import {
   sales,
   branches,
-  locationLogs,
+  employeeLocations,
+  employeeTrackingStatus,
   users,
   dailyMileage,
   saleAssignments,
@@ -123,22 +124,22 @@ export const reportsRouter = createTRPCRouter({
       // 3. Fetch Attendance/Visits
       const attendanceData = await ctx.db
         .select({
-          id: locationLogs.id,
+          id: employeeLocations.id,
           userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-          date: locationLogs.date,
-          slab: locationLogs.slab,
-          latitude: locationLogs.latitude,
-          longitude: locationLogs.longitude,
-          locationName: locationLogs.locationName,
-          recordedAt: locationLogs.recordedAt,
+          date: sql<string>`to_char(${employeeLocations.recordedAt}, 'YYYY-MM-DD')`,
+          slab: sql<string>`'Field Checkpoint'`,
+          latitude: sql<string>`(${employeeLocations.latitude})::text`,
+          longitude: sql<string>`(${employeeLocations.longitude})::text`,
+          locationName: sql<string>`'GPS Point'`,
+          recordedAt: employeeLocations.recordedAt,
         })
-        .from(locationLogs)
-        .innerJoin(users, eq(locationLogs.userId, users.id))
+        .from(employeeLocations)
+        .innerJoin(users, eq(employeeLocations.employeeId, users.id))
         .where(
           and(
-            inArray(locationLogs.userId, targetUserIds),
-            gte(locationLogs.recordedAt, start),
-            lte(locationLogs.recordedAt, end),
+            inArray(employeeLocations.employeeId, targetUserIds),
+            gte(employeeLocations.recordedAt, start),
+            lte(employeeLocations.recordedAt, end),
           ),
         );
 
@@ -433,52 +434,39 @@ export const reportsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (ctx.dbUser.role !== "Admin")
         throw new TRPCError({ code: "FORBIDDEN" });
-      const slabs = [
-        "00:00-10:00",
-        "10:00-14:00",
-        "14:00-18:00",
-        "18:00-21:00",
-      ];
-      const locations = [
-        "Main Branch",
-        "Client Office",
-        "Warehouse A",
-        "Field Visit",
-      ];
-      const now = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
-      );
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      const dateStr = `${year}-${month}-${day}`;
 
-      for (let i = 0; i < slabs.length; i++) {
-        const slab = slabs[i]!;
-        const locName = locations[i]!;
-        /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
-        await ctx.db
-          .insert(locationLogs)
-          .values({
-            userId: input.targetId,
-            date: dateStr,
-            slab,
-            latitude: "28.6139", // New Delhi coordinates
-            longitude: "77.2090",
-            locationName: locName,
-            frequencyMap: { "28.6139,77.2090": 10 },
-            recordedAt: new Date(),
-          })
-          .onConflictDoUpdate({
-            target: [locationLogs.userId, locationLogs.date, locationLogs.slab],
-            set: {
-              locationName: locName,
-              latitude: "28.6139",
-              longitude: "77.2090",
-            },
-          });
-        /* eslint-enable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
+      for (let i = 0; i < 4; i++) {
+        await ctx.db.insert(employeeLocations).values({
+          employeeId: input.targetId,
+          latitude: 28.6139 + i * 0.01,
+          longitude: 77.2090 + i * 0.01,
+          accuracy: 10,
+          isOfflineSynced: false,
+          recordedAt: new Date(Date.now() - (4 - i) * 3600000),
+        });
       }
+
+      await ctx.db
+        .insert(employeeTrackingStatus)
+        .values({
+          employeeId: input.targetId,
+          lastLatitude: 28.6439,
+          lastLongitude: 77.2390,
+          lastUpdatedAt: new Date(),
+          locationPermissionStatus: "ALWAYS",
+          isOnline: true,
+        })
+        .onConflictDoUpdate({
+          target: employeeTrackingStatus.employeeId,
+          set: {
+            lastLatitude: 28.6439,
+            lastLongitude: 77.2390,
+            lastUpdatedAt: new Date(),
+            locationPermissionStatus: "ALWAYS",
+            isOnline: true,
+          },
+        });
+
       return { success: true };
     }),
 

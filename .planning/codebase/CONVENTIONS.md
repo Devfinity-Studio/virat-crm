@@ -1,46 +1,94 @@
-# Codebase Conventions & Standards
+---
+last_mapped_commit: 8c574802947c74013f90c4768608279f0dee5699
+---
 
-This document establishes the architectural, formatting, and coding conventions adopted throughout the Virat CRM repository.
+# Coding Conventions
 
-## 1. TypeScript & Typing Standards
-- **Strict Mode:** Enabled in `tsconfig.json` (`strict: true`). Avoid `any` types whenever possible; use properly typed interfaces, generics, or Zod inference (`z.infer<typeof schema>`).
-- **Path Aliases:** Use `@/*` imports targeting `src/*` (e.g. `@/server/db`, `@/components/ui/button`, `@/trpc/react`).
-- **Server vs Client Separation:**
-  - Mark client components with `"use client";` at the top of the file.
-  - Server-only modules (database connections, S3 client, password hashing) must reside under `src/server/` or `src/app/api/` and never be imported into client components.
+**Analysis Date:** 2026-10-31
 
-## 2. API & Procedure Standards (tRPC)
-- **Procedure Levels:**
-  - `publicProcedure`: Open to unauthenticated callers (e.g., login, signup, public branch list).
-  - `protectedProcedure`: Requires a valid user session.
-  - `featureProtectedProcedure(featureKey)`: Enforces dynamic feature-level authorization checked against `rolePermissions`.
-  - `featureManagerProcedure(featureKey)`: Restricts access to users who are Managers, Admins, or Developers.
-- **Input Validation:** All procedures accepting user inputs MUST use Zod schemas (`.input(z.object({...}))`).
-- **Branch Scoping:** Any operation touching multi-tenant records (Sales, Inventory, Customers) must call `enforceBranchIsolation(ctx, targetBranchId)` to ensure strict branch data boundaries.
-- **Transactions:** Complex multi-step operations (e.g., creating a sale + updating inventory + recording ledger) must be wrapped in `ctx.db.transaction(async (tx) => { ... })`.
+## Naming Patterns
 
-## 3. Database & Schema Conventions (Drizzle ORM)
-- **Naming Conventions:**
-  - Tables use camelCase in code and snake_case in SQL definitions, prefixed with `virat-crm_` via `createTable = pgTableCreator((name) => \`virat-crm_\${name}\`)`.
-  - Column names use camelCase in TypeScript and snake_case in PostgreSQL (e.g. `employeeCode: varchar("employee_code")`).
-- **Primary Keys:** UUID v4 (`uuid().primaryKey().defaultRandom()`) for users and security identities; serial integers for sequential entities (branches, inventory, products).
-- **Relations:** Drizzle `relations` definitions must accompany schema definitions in `src/server/db/schema/` to facilitate clean relational queries (`with: { ... }`).
+**Files & Directories:**
+- Route folders: kebab-case (`live-map`, `field-support`, `feature-access`).
+- Next.js special files: `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`.
+- React Components: PascalCase (`AddUserForm.tsx`, `FeatureGate.tsx`, `Button.tsx`).
+- Router & Service files: camelCase (`salesService.ts`, `userService.ts`, `dailyReports.ts`).
+- Schema files: camelCase (`users.ts`, `rolePermissions.ts`, `systemSettings.ts`).
+- Test files: `*.test.ts` placed in `tests/` or `tests/integration/`.
 
-## 4. UI & Styling Conventions
-- **Utility Classes:** Use Tailwind CSS utility classes; avoid inline styles.
-- **Class Merging:** Use the `cn(...)` utility (`clsx` + `tailwind-merge`) when conditionally combining class names.
-- **Design Consistency:** Use predefined design tokens from `shadcn/ui` (e.g., `text-slate-900`, `bg-blue-600`, `border-slate-200`). Avoid arbitrary ad-hoc color values.
-- **Responsiveness:** Design with mobile-first responsiveness in mind, as the web application is loaded inside the Capacitor native WebView on iOS and Android.
+**Functions & Procedures:**
+- camelCase for functions, methods, and tRPC procedure names (`createSale`, `getPresignedUploadUrl`, `recordBreadcrumb`, `generateNextEmployeeCode`).
+- Handlers: `handle*` or `on*` for event callbacks (`handleSubmit`, `onValueChange`).
 
-## 5. Security & Authentication Conventions
-- **Passwords:** Passwords must be hashed using `bcrypt.hash(password, 10)` before insertion or update. Plaintext passwords must never be logged or returned in query outputs.
-- **Session Tokens:** Signed using `jose` with HS256. Web sessions use secure HTTP-only cookies; mobile sessions support `Authorization: Bearer <token>` headers.
-- **Sanitization:** Normalize codes and emails (e.g. `.trim()`, `.toUpperCase()`, or case-insensitive lookups) so users are not blocked by accidental mobile keyboard capitalization.
+**Variables & Constants:**
+- Variables & properties: camelCase (`branchId`, `totalAmount`, `employeeCode`).
+- Constants: UPPER_SNAKE_CASE (`SYSTEM_FEATURES`, `SALT_ROUNDS`, `DEFAULT_PAGE_SIZE`).
 
-## 6. Git & Commit Guidelines
-- **Commit Messages:** Follow Conventional Commits:
-  - `feat(...)`: New user-facing functionality or procedure
-  - `fix(...)`: Bug fix or patch
-  - `refactor(...)`: Code structural changes without feature modification
-  - `docs(...)`: Documentation updates
-  - `chore(...)`: Dependency updates or build configuration
+**Types & Interfaces:**
+- PascalCase for interfaces, type aliases, and enums (`SystemFeatureKey`, `UserRole`, `SaleWithItems`).
+- Avoid `I` prefix on interfaces.
+- Prefer Zod inferred types: `type CreateUserInput = z.infer<typeof createUserSchema>`.
+
+## Code Style
+
+**Formatting:**
+- Prettier managed with `.prettierrc` / `prettier.config.js` and `prettier-plugin-tailwindcss`.
+- Double quotes, semicolons enabled, 2-space indentation.
+- Run check: `pnpm format:check`
+- Run auto-fix: `pnpm format:write`
+
+**Linting:**
+- ESLint 9 using flat configuration in `eslint.config.js`.
+- Rules extend `eslint-config-next` and `typescript-eslint`.
+- Run check: `pnpm check` (which runs `next lint && tsc --noEmit`).
+
+## Import Organization
+
+**Order:**
+1. External package imports (`react`, `next`, `@trpc/server`, `zod`).
+2. Internal absolute imports via path alias `@/*` (`@/server/db`, `@/components/ui`, `@/trpc/react`).
+3. Relative imports (`./types`, `../utils`).
+4. Type-only imports (`import type { ... } from "..."`).
+
+**Path Aliases:**
+- `@/*` maps to `./src/*`.
+- Use `@/server/db` for database queries.
+- Use `@/server/lib/services/*` for domain service calls.
+- Use `@/components/ui/*` for common UI components.
+- Use `@/trpc/react` for client-side tRPC hooks.
+
+## Error Handling
+
+**Server Procedures (tRPC):**
+- Throw standard `TRPCError` with appropriate HTTP status codes:
+  - `UNAUTHORIZED`: When user is unauthenticated or session expired.
+  - `FORBIDDEN`: When user lacks feature permission or breaches branch isolation.
+  - `BAD_REQUEST`: When input fails domain validation or insufficient stock exists.
+  - `NOT_FOUND`: When requested record does not exist.
+  - `INTERNAL_SERVER_ERROR`: For unexpected runtime failures.
+- Never leak raw database errors or stack traces directly to end users.
+
+**Client UI:**
+- Catch mutation errors using `onError: (error) => toast.error(error.message)`.
+- Use `<ErrorBoundary>` or fallback states for critical component boundaries.
+
+## Architecture & Service Separation
+
+**Domain Services:**
+- Complex business logic, calculations, and multi-table operations must be extracted into `src/server/lib/services/` instead of bloat in router files.
+- `salesService.ts`: Stock balance validation, invoice calculation, and inventory transactions.
+- `userService.ts`: Sequential employee code calculation, password hashing, and manager hierarchy sync.
+- Routers should remain lightweight controller layers handling input parsing, procedure middleware, and service delegation.
+
+**Multi-Tenancy & Security:**
+- Any procedure mutating or querying branch-scoped data must enforce branch boundaries using `enforceBranchIsolation(ctx, targetBranchId)`.
+- `Developer` and `Admin` users are explicitly allowed cross-branch access.
+
+**Transactions:**
+- Multi-table mutations must be wrapped within `ctx.db.transaction(async (tx) => { ... })` to preserve database consistency.
+
+## Authentication & Case-Insensitivity
+
+**User Identity Lookups:**
+- Employee codes, emails, and usernames must be looked up case-insensitively using `ilike(table.col, value.trim())` or `sql\`LOWER(${table.col}) = LOWER(${value.trim()})\``.
+- Passwords must always be hashed with `bcrypt.hash(password, 10)` before storage.

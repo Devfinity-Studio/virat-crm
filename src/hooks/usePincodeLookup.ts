@@ -36,7 +36,7 @@ export function usePincodeLookup(pincode: string) {
 
         if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice) {
           const offices = data[0].PostOffice;
-          if (offices.length > 0) {
+          if (offices.length > 0 && offices[0]) {
             setFetchedDistrict(offices[0].District || "");
             setFetchedState(offices[0].State || "");
             setVillages(offices.map(o => o.Name));

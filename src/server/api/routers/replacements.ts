@@ -66,6 +66,10 @@ export const replacementsRouter = createTRPCRouter({
         .values(newReplacement)
         .returning();
 
+      if (!replacement) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create replacement" });
+      }
+
       if (input.items.length > 0) {
         await ctx.db.insert(replacementItems).values(
           input.items.map(item => ({

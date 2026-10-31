@@ -7,6 +7,7 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { SkeletonProvider } from "@/components/ui/skeleton-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "./_components/layout/CookieBanner";
+import { LocationTrackerProvider } from "./_components/location/LocationTrackerProvider";
 
 export const metadata: Metadata = {
   title: "Virat CRM",
@@ -70,7 +71,9 @@ export default async function RootLayout({
       <body className="bg-background text-foreground selection:bg-primary/10 selection:text-primary min-h-screen antialiased">
         <TRPCReactProvider>
           <SkeletonProvider>
-            {children}
+            <LocationTrackerProvider>
+              {children}
+            </LocationTrackerProvider>
             <Toaster />
             <CookieBanner />
           </SkeletonProvider>

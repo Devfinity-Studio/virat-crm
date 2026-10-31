@@ -3,7 +3,7 @@
 import { DashboardLayout } from "@/app/_components/layout/DashboardLayout";
 import { FeatureGate } from "@/app/_components/auth/FeatureGate";
 import { api } from "@/trpc/react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, User, Key, MapPin, Briefcase, FileText, Download, Shield, Edit, X, Trash2, Check, Pencil, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useState, use, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { GenericUploader, UploadedFile } from "@/app/_components/ui/GenericUploader";
+import { GenericUploader } from "@/app/_components/ui/GenericUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 

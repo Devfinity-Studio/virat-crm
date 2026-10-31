@@ -4,7 +4,7 @@ import { FeatureGate } from "@/app/_components/auth/FeatureGate";
 
 import { DashboardLayout } from "@/app/_components/layout/DashboardLayout";
 import { OrgFlowchart } from "@/app/_components/workforce/OrgFlowchart";
-import { Network, Users, LayoutGrid, GitBranch } from "lucide-react";
+import { Network, LayoutGrid, GitBranch } from "lucide-react";
 import { useState } from "react";
 import { OrgTree } from "@/app/_components/workforce/OrgTree";
 

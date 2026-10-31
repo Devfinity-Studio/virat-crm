@@ -9,7 +9,6 @@ import {
   UserPlus,
   List,
   Loader2,
-  Key,
   XCircle,
   CheckCircle2,
   MapPin,
@@ -24,9 +23,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -196,6 +192,8 @@ function UserList() {
     role: string;
     branchId: string;
     managerIds: string[];
+    bloodGroup: string;
+    dob?: string;
   }>({
     firstName: "",
     lastName: "",
@@ -204,6 +202,10 @@ function UserList() {
     role: "",
     branchId: "none",
     managerIds: [],
+    fatherName: "",
+    joiningRole: "",
+    joiningDate: "",
+    bloodGroup: "O+",
   });
 
   const updateUserMutation = api.users.updateUser.useMutation({
@@ -609,7 +611,8 @@ function UserList() {
                   employeeCode: contextMenu.user.employeeCode ?? "",
                   role: contextMenu.user.role ?? "",
                   joiningRole: contextMenu.user.joiningRole ?? "",
-                  joiningDate: contextMenu.user.joiningDate ? new Date(contextMenu.user.joiningDate).toISOString().split('T')[0] : "",
+                  joiningDate: (contextMenu.user.joiningDate ? new Date(contextMenu.user.joiningDate).toISOString().split('T')[0] : "") || "",
+                  bloodGroup: (contextMenu.user as any).bloodGroup ?? "O+",
                   dob: contextMenu.user.dob ? new Date(contextMenu.user.dob).toISOString().split('T')[0] : "",
                   branchId: contextMenu.user.branchId
                     ? contextMenu.user.branchId.toString()
@@ -725,7 +728,7 @@ function UserList() {
               promoteMutation.mutate({
                 userId: promoteUser.id,
                 newRole: promoteForm.role,
-                promotionDate: new Date(promoteForm.date)
+                promotionDate: new Date(promoteForm.date || Date.now())
               });
             }} className="space-y-4">
               <div className="space-y-2">
