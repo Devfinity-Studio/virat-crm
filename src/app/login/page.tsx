@@ -3,18 +3,17 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Lock, User, AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import { ShieldCheck, User, AlertCircle, Loader2, ArrowRight, Eye, EyeOff, Building2, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-
 import { Suspense } from "react";
 import Link from "next/link";
 
 function LoginContent() {
   const [employeeCode, setEmployeeCode] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requireBranch, setRequireBranch] = useState(false);
@@ -31,7 +30,10 @@ function LoginContent() {
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const body: Record<string, any> = { employeeCode, password };
+      const body: Record<string, any> = { 
+        employeeCode: employeeCode.trim(), 
+        password 
+      };
       if (requireBranch && selectedBranchId) {
         body.branchId = parseInt(selectedBranchId, 10);
       }
@@ -53,11 +55,7 @@ function LoginContent() {
           const activeBranches = data.branches;
           setRequireBranch(true);
           setBranches(activeBranches ?? []);
-          if (
-            activeBranches &&
-            activeBranches.length > 0 &&
-            activeBranches[0]
-          ) {
+          if (activeBranches && activeBranches.length > 0 && activeBranches[0]) {
             setSelectedBranchId(activeBranches[0].id.toString());
           }
         } else {
@@ -65,98 +63,138 @@ function LoginContent() {
           router.refresh();
         }
       } else {
-        setError(data.error ?? "Login failed");
+        setError(data.error ?? "Invalid Employee ID or password. Please try again.");
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+    } catch {
+      setError("Unable to connect to the server. Please check your internet connection and try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 p-4">
-      {/* Background Orbs */}
-      <div className="animate-blob absolute top-0 -left-4 h-72 w-72 rounded-full bg-blue-100 opacity-70 mix-blend-multiply blur-xl filter" />
-      <div className="animate-blob animation-delay-2000 absolute top-0 -right-4 h-72 w-72 rounded-full bg-emerald-100 opacity-70 mix-blend-multiply blur-xl filter" />
-      <div className="animate-blob animation-delay-4000 absolute -bottom-8 left-20 h-72 w-72 rounded-full bg-slate-200 opacity-70 mix-blend-multiply blur-xl filter" />
-
+    <div className="relative flex min-h-[100dvh] flex-col justify-center bg-slate-50 p-4 sm:p-6 overflow-x-hidden">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="z-10 w-full max-w-md"
+        className="mx-auto w-full max-w-md"
       >
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-2xl backdrop-blur-xl">
-          <div className="p-8">
-            <div className="mb-8 text-center">
-              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-200">
-                <Lock className="h-8 w-8 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-slate-900">Virat ERP</h1>
-              <p className="mt-2 text-sm text-slate-500">
-                Sign in to your workplace
-              </p>
+        {/* Company Header */}
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-md shadow-blue-500/20">
+            <ShieldCheck className="h-9 w-9 text-white" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Virat CRM
+          </h1>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            Field Workforce & Management Portal
+          </p>
+        </div>
+
+        {/* Card Shell */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
+          <div className="p-6 sm:p-8">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-slate-900">Welcome Back</h2>
+              <p className="text-sm text-slate-500">Please sign in to start your work shift</p>
             </div>
 
             {signupSuccess && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-center text-sm font-medium text-emerald-700"
+                className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center text-sm font-medium text-emerald-800"
               >
-                Account created successfully! Please log in.
+                Account created successfully! Please sign in below.
               </motion.div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-6">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-800"
+              >
+                <AlertCircle className="h-5 w-5 shrink-0 text-rose-600 mt-0.5" />
+                <div className="flex-1">
+                  <p>{error}</p>
+                  <p className="mt-1 text-xs text-rose-600">Need help? Contact your dispatch manager.</p>
+                </div>
+              </motion.div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-5">
+              {/* Employee ID */}
               <div className="space-y-2">
-                <Label htmlFor="employeeCode">Employee Code</Label>
+                <Label htmlFor="employeeCode" className="text-sm font-semibold text-slate-800">
+                  Employee ID / Code
+                </Label>
                 <div className="relative">
-                  <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <Input
                     id="employeeCode"
-                    placeholder="EMP-123456"
-                    className="h-12 rounded-xl border-slate-200 pl-10 focus:ring-blue-500"
+                    placeholder="e.g. EMP-1001 or 10008"
+                    className="min-h-[56px] h-14 rounded-xl border-slate-200 bg-slate-50/50 pl-12 text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:ring-blue-600"
                     value={employeeCode}
                     onChange={(e) => setEmployeeCode(e.target.value)}
+                    autoCapitalize="characters"
                     required
                   />
                 </div>
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <a href="#" className="text-xs text-blue-600 hover:underline">
-                    Forgot password?
-                  </a>
+                  <Label htmlFor="password" className="text-sm font-semibold text-slate-800">
+                    Password
+                  </Label>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="h-12 rounded-xl border-slate-200 pl-10 focus:ring-blue-500"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    className="min-h-[56px] h-14 rounded-xl border-slate-200 bg-slate-50/50 pr-24 text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:ring-blue-600"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 active:bg-slate-200 transition-colors"
+                  >
+                    {showPassword ? (
+                      <>
+                        <EyeOff className="h-4 w-4 text-slate-500" />
+                        <span>Hide</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4 text-slate-500" />
+                        <span>Show</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
+              {/* Operating Branch Dropdown (When triggered for multi-branch admins) */}
               {requireBranch && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="space-y-2 overflow-hidden"
+                  className="space-y-2 overflow-hidden rounded-xl border border-blue-100 bg-blue-50/40 p-4"
                 >
-                  <Label htmlFor="branch">
-                    Operating Branch (Admin Privilege)
+                  <Label htmlFor="branch" className="text-sm font-semibold text-blue-950 flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4 text-blue-600" />
+                    Select Active Branch
                   </Label>
                   <select
                     id="branch"
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="min-h-[52px] h-13 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     value={selectedBranchId}
                     onChange={(e) => setSelectedBranchId(e.target.value)}
                     required
@@ -170,51 +208,46 @@ function LoginContent() {
                 </motion.div>
               )}
 
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-600"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  {error}
-                </motion.div>
-              )}
-
+              {/* Huge 56px Tall Submit CTA */}
               <Button
                 type="submit"
-                className="h-12 w-full rounded-xl bg-blue-600 font-semibold text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 active:scale-[0.98]"
+                className="min-h-[56px] h-14 w-full rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] font-bold text-base text-white shadow-lg shadow-blue-500/25 transition-all"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
                   <span className="flex items-center gap-2">
-                    Access Dashboard <ArrowRight className="h-4 w-4" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Signing in...</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <span>Log In</span>
+                    <ArrowRight className="h-5 w-5" />
                   </span>
                 )}
               </Button>
             </form>
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50 p-4 text-center">
-            <p className="text-sm text-slate-500">
-              New here?{" "}
-              <Link
-                href="/signup"
-                className="font-semibold text-blue-600 hover:underline"
-              >
-                Create an account
-              </Link>
-            </p>
-            <p className="text-xs font-medium text-slate-400">
-              Authorized Personnel Only
+          {/* Quick Support Footer */}
+          <div className="flex flex-col items-center gap-2 border-t border-slate-100 bg-slate-50/80 p-4 text-center">
+            <a
+              href="tel:+918000000000"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors"
+            >
+              <PhoneCall className="h-3.5 w-3.5 text-blue-600" />
+              Need Dispatch Assistance? Call Support
+            </a>
+            <p className="text-xs text-slate-400">
+              Virat CRM Field Workforce Edition • TLS Encrypted
             </p>
           </div>
         </div>
+
+        {/* Legal links */}
         <div className="mt-4 text-center text-xs text-slate-500">
           <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link> •{" "}
-          <Link href="/terms-of-service" className="hover:underline">Terms</Link>
+          <Link href="/terms-of-service" className="hover:underline">Terms of Service</Link>
         </div>
       </motion.div>
     </div>
@@ -225,7 +258,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         </div>
       }

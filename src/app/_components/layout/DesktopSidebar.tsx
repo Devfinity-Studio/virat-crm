@@ -209,7 +209,7 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <div
       className={cn(
-        "border-border flex flex-col sticky top-0 h-screen transition-all duration-300 ease-in-out bg-green-50/40 dark:bg-green-950/20",
+        "border-border flex flex-col sticky top-0 h-screen transition-all duration-300 ease-in-out bg-green-50/40",
         !isMobile && "hidden border-r md:flex",
         isCollapsed ? "w-20" : "w-64"
       )}
@@ -245,7 +245,7 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
                   </button>
                 )}
                 {isCollapsed && index > 0 && (
-                   <div className="mx-4 my-2 border-t border-slate-200 dark:border-slate-800" />
+                   <div className="mx-4 my-2 border-t border-slate-200" />
                 )}
                 {(isCollapsed || expandedCategories[category.title]) && visibleLinks.map((link) => {
                   const isActive =
@@ -262,7 +262,7 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
                         isCollapsed ? "justify-center px-2" : "px-5 space-x-3",
                         isActive
                           ? "bg-primary font-semibold text-white shadow-md"
-                          : "text-slate-500 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100",
+                          : "text-slate-500 hover:bg-white/60 hover:text-slate-900",
                       )}
                     >
                       <Icon

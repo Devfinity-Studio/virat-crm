@@ -131,7 +131,7 @@ export default function InventoryPage() {
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
@@ -141,7 +141,7 @@ export default function InventoryPage() {
                     <stat.icon className={cn("h-4 w-4", stat.color)} />
                   </div>
                 </div>
-                <p className="text-2xl font-black tracking-tight text-slate-900 tabular-nums dark:text-slate-100">
+                <p className="text-2xl font-black tracking-tight text-slate-900 tabular-nums">
                   {stat.value}
                 </p>
               </div>
@@ -149,27 +149,27 @@ export default function InventoryPage() {
           </div>
 
           {/* Inventory List */}
-          <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="border-border flex flex-col justify-between gap-4 border-b bg-slate-50/50 p-5 md:flex-row md:items-center dark:bg-slate-900/50">
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+            <div className="border-border flex flex-col justify-between gap-4 border-b bg-slate-50/50 p-5 md:flex-row md:items-center">
               <div className="relative max-w-md flex-1">
                 <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search by SKU or Product Name..."
-                  className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-4 pl-11 text-sm font-medium shadow-sm transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                  className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-4 pl-11 text-sm font-medium shadow-sm transition-all outline-none focus:ring-2"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                <button className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100">
                   <Filter className="h-4 w-4" />
                   Filters
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="flex flex-col divide-y divide-slate-100">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <div
@@ -177,13 +177,13 @@ export default function InventoryPage() {
                     className="flex animate-pulse items-center justify-between p-5"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                      <div className="h-10 w-10 rounded-xl bg-slate-200" />
                       <div className="flex flex-col gap-2">
-                        <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
-                        <div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-800" />
+                        <div className="h-4 w-32 rounded bg-slate-200" />
+                        <div className="h-3 w-20 rounded bg-slate-200" />
                       </div>
                     </div>
-                    <div className="h-8 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-8 w-24 rounded-full bg-slate-200" />
                   </div>
                 ))
               ) : filteredStock?.length === 0 ? (
@@ -194,14 +194,14 @@ export default function InventoryPage() {
                 filteredStock?.map((item) => (
                   <div
                     key={item.productId}
-                    className="group flex flex-col justify-between gap-4 px-4 py-2.5 transition-colors odd:bg-white even:bg-slate-100 hover:bg-slate-200/50 sm:flex-row sm:items-center dark:odd:bg-slate-900 dark:even:bg-slate-800 dark:hover:bg-slate-800/80"
+                    className="group flex flex-col justify-between gap-4 px-4 py-2.5 transition-colors odd:bg-white even:bg-slate-100 hover:bg-slate-200/50 sm:flex-row sm:items-center"
                   >
                     <div className="flex items-center gap-4">
                       <div className="bg-primary/10 text-primary hidden h-12 w-12 items-center justify-center rounded-xl font-bold shadow-sm sm:flex">
                         <Package className="h-5 w-5" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                        <span className="text-base font-bold tracking-tight text-slate-900">
                           {item.product.name}
                         </span>
                         <span className="mt-0.5 font-mono text-xs text-slate-500">
@@ -215,7 +215,7 @@ export default function InventoryPage() {
                         <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                           Price
                         </span>
-                        <span className="text-lg font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
+                        <span className="text-lg font-bold text-emerald-600 tabular-nums">
                           ₹{item.product.price}
                         </span>
                       </div>
@@ -224,7 +224,7 @@ export default function InventoryPage() {
                         <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                           In Stock
                         </span>
-                        <span className="text-lg font-bold text-slate-900 tabular-nums dark:text-slate-100">
+                        <span className="text-lg font-bold text-slate-900 tabular-nums">
                           {item.quantity}
                         </span>
                       </div>
@@ -267,9 +267,9 @@ export default function InventoryPage() {
       {/* Add Product Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="animate-in fade-in zoom-in-95 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl duration-200 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <div className="animate-in fade-in zoom-in-95 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+              <h3 className="text-lg font-bold text-slate-900">
                 Add New Product
               </h3>
               <button
@@ -281,13 +281,13 @@ export default function InventoryPage() {
             </div>
             <div className="space-y-4 p-6">
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-bold text-slate-700">
                   Product Name
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. Premium Filter"
-                  className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                  className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2"
                   value={newProduct.name}
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, name: e.target.value })
@@ -296,14 +296,14 @@ export default function InventoryPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-bold text-slate-700">
                     SKU (Auto-generated)
                   </label>
                   <input
                     type="text"
                     disabled
                     placeholder="Auto-generated"
-                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm uppercase transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800 opacity-70 cursor-not-allowed"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm uppercase transition-all outline-none focus:ring-2 opacity-70 cursor-not-allowed"
                     value={newProduct.sku}
                     onChange={(e) =>
                       setNewProduct({
@@ -314,7 +314,7 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-bold text-slate-700">
                     Selling Price (₹)
                   </label>
                   <input
@@ -322,7 +322,7 @@ export default function InventoryPage() {
                     min="0"
                     step="0.01"
                     placeholder="0.00"
-                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2"
                     value={newProduct.price}
                     onChange={(e) =>
                       setNewProduct({ ...newProduct, price: e.target.value })
@@ -332,13 +332,13 @@ export default function InventoryPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-bold text-slate-700">
                     Category
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Fertilizer"
-                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2"
                     value={newProduct.category}
                     onChange={(e) =>
                       setNewProduct({ ...newProduct, category: e.target.value })
@@ -346,13 +346,13 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-bold text-slate-700">
                     HSN Code
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. 00005"
-                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2"
                     value={newProduct.hsnCode}
                     onChange={(e) =>
                       setNewProduct({ ...newProduct, hsnCode: e.target.value })
@@ -362,7 +362,7 @@ export default function InventoryPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-bold text-slate-700">
                     Points Per Qty
                   </label>
                   <input
@@ -370,7 +370,7 @@ export default function InventoryPage() {
                     min="0"
                     step="0.01"
                     placeholder="e.g. 10"
-                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2 dark:border-slate-700 dark:bg-slate-800"
+                    className="focus:ring-primary/20 focus:border-primary w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition-all outline-none focus:ring-2"
                     value={newProduct.pointsPerQty}
                     onChange={(e) =>
                       setNewProduct({ ...newProduct, pointsPerQty: e.target.value })
@@ -379,10 +379,10 @@ export default function InventoryPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-900/50">
+            <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-5">
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100"
               >
                 Cancel
               </button>

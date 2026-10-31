@@ -227,7 +227,7 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
             return (
               <Card
                 key={report.id}
-                className={`group overflow-hidden rounded-2xl border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-md odd:bg-white even:bg-slate-50 dark:odd:bg-slate-900 dark:even:bg-slate-800/50 ${
+                className={`group overflow-hidden rounded-2xl border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-md odd:bg-white even:bg-slate-50 ${
                   scope === "management" || scope === "branch" ? "border-indigo-200" : "border-slate-200"
                 }`}
               >

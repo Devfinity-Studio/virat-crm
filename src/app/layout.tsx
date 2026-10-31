@@ -67,6 +67,7 @@ export default async function RootLayout({
     <html 
       lang="en" 
       className={`light ${inter.variable} ${montserrat.variable} ${openSans.variable} ${roboto.variable}`}
+      style={{ colorScheme: 'light' }}
     >
       <body className="bg-background text-foreground selection:bg-primary/10 selection:text-primary min-h-screen antialiased">
         <TRPCReactProvider>

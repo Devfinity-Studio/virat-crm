@@ -280,7 +280,7 @@ export default function AdvancesDashboard() {
                     return (
                       <div
                         key={sale?.id ?? idx}
-                        className="group flex cursor-pointer flex-col justify-between gap-3 border-b border-slate-100 py-2.5 px-4 transition-all hover:shadow-md active:scale-[0.99] sm:flex-row sm:items-center md:py-3 md:px-5 odd:bg-white even:bg-slate-100 dark:border-slate-800 dark:odd:bg-slate-900 dark:even:bg-slate-800"
+                        className="group flex cursor-pointer flex-col justify-between gap-3 border-b border-slate-100 py-2.5 px-4 transition-all hover:shadow-md active:scale-[0.99] sm:flex-row sm:items-center md:py-3 md:px-5 odd:bg-white even:bg-slate-100"
                         onClick={() => sale && setSelectedSale(sale)}
                       >
                         <div className="flex items-center gap-4">
@@ -288,7 +288,7 @@ export default function AdvancesDashboard() {
                             {sale?.customerName?.charAt(0) ?? "C"}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                            <span className="text-base font-bold tracking-tight text-slate-900">
                               {sale?.orderNumber ?? "ORD-000000"}
                             </span>
                             <span className="text-sm font-medium text-slate-500">
@@ -307,7 +307,7 @@ export default function AdvancesDashboard() {
                             <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                               Advance / Total
                             </span>
-                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            <span className="text-sm font-bold text-slate-900">
                               ₹{sale?.advancePaymentAmount ?? "0"} / ₹{sale?.invoiceAmount ?? "0"}
                             </span>
                             <span className="text-xs text-rose-500 font-semibold mt-0.5">
@@ -335,7 +335,7 @@ export default function AdvancesDashboard() {
                 {hasNextPage && (
                   <Button
                     variant="outline"
-                    className="mt-4 h-12 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/50"
+                    className="mt-4 h-12 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-100"
                     onClick={() => fetchNextPage()}
                     disabled={isFetchingNextPage}
                   >

@@ -4,7 +4,7 @@ export default function DataDeletion() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <h1 className="text-3xl font-bold mb-6">Data Deletion Request</h1>
-      <div className="prose dark:prose-invert max-w-none mb-8">
+      <div className="prose max-w-none mb-8">
         <p>
           At Virat Bio Plaantec private limited, we respect your right to privacy and your right to be forgotten. 
           If you wish to have your account and all associated personal data permanently removed from our CRM system, you may request data deletion here.

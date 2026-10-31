@@ -64,8 +64,8 @@ export function CustomerList({ isManager = false }: CustomerListProps) {
       </div>
 
       {/* Customer List */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <div className="flex flex-col divide-y divide-slate-100">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div
@@ -73,13 +73,13 @@ export function CustomerList({ isManager = false }: CustomerListProps) {
                 className="flex animate-pulse items-center justify-between p-5"
               >
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-10 w-10 rounded-xl bg-slate-200" />
                   <div className="flex flex-col gap-2">
-                    <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
-                    <div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-4 w-32 rounded bg-slate-200" />
+                    <div className="h-3 w-20 rounded bg-slate-200" />
                   </div>
                 </div>
-                <div className="h-8 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="h-8 w-24 rounded-full bg-slate-200" />
               </div>
             ))
           ) : customers?.length === 0 ? (
@@ -90,15 +90,15 @@ export function CustomerList({ isManager = false }: CustomerListProps) {
             customers?.map((customer) => (
               <div
                 key={customer.id}
-                className="group relative flex flex-col justify-between gap-4 px-4 py-2.5 transition-colors odd:bg-white even:bg-slate-100 hover:bg-slate-200/50 sm:flex-row sm:items-center dark:odd:bg-slate-900 dark:even:bg-slate-800 dark:hover:bg-slate-800/80"
+                className="group relative flex flex-col justify-between gap-4 px-4 py-2.5 transition-colors odd:bg-white even:bg-slate-100 hover:bg-slate-200/50 sm:flex-row sm:items-center"
               >
                 <div className="flex items-center gap-4">
-                  <div className="hidden h-12 w-12 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-600 shadow-sm sm:flex dark:bg-blue-900/20 dark:text-blue-400">
+                  <div className="hidden h-12 w-12 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-600 shadow-sm sm:flex">
                     {customer.name.charAt(0)}
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                      <span className="text-base font-bold tracking-tight text-slate-900">
                         {customer.name}
                       </span>
                       <Link
@@ -113,7 +113,7 @@ export function CustomerList({ isManager = false }: CustomerListProps) {
                       <span className="flex items-center gap-1 text-xs font-medium text-slate-500">
                         <Phone className="h-3 w-3" /> {customer.mobile}
                       </span>
-                      <span className="text-slate-300 dark:text-slate-600">
+                      <span className="text-slate-300">
                         •
                       </span>
                       <span className="flex items-center gap-1 text-xs text-slate-500">
