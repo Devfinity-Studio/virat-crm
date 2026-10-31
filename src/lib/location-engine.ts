@@ -14,6 +14,14 @@ const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>(
   "BackgroundGeolocation",
 );
 
+interface LocationBridgePluginType {
+  startService(options?: { token?: string }): Promise<void>;
+  stopService(): Promise<void>;
+  setToken(options: { token: string }): Promise<void>;
+}
+
+const LocationBridge = registerPlugin<LocationBridgePluginType>("LocationBridge");
+
 export type PermissionState = "GRANTED" | "DENIED" | "PROMPT" | "NOT_SUPPORTED";
 
 export interface LocationCoordinates {
@@ -32,7 +40,7 @@ export interface LocationEngineCallbacks {
   onLockout?: (reason: string) => void;
 }
 
-const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+const PERSIST_INTERVAL_MS = 60 * 1000; // 60 seconds ping interval
 const HEALTH_POLL_INTERVAL_MS = 30 * 1000;
 
 class LocationEngine {
@@ -172,10 +180,10 @@ class LocationEngine {
       void this.probeHealth();
     }, HEALTH_POLL_INTERVAL_MS);
 
-    // Start 15-minute persistent checkpoint flush timer
+    // Start 60-second persistent checkpoint flush timer
     this.persistenceTimer = setInterval(() => {
       void this.persistCurrentCheckpoint();
-    }, FIFTEEN_MINUTES_MS);
+    }, PERSIST_INTERVAL_MS);
 
     if (this.isNative) {
       return this.startNativeTracking();
@@ -239,13 +247,21 @@ class LocationEngine {
    */
   private async startNativeTracking(): Promise<boolean> {
     try {
+      // Start native Foreground Service so tracking continues even when app is closed / swiped away
+      const token = typeof window !== "undefined" ? localStorage.getItem("virat_auth_token") : null;
+      try {
+        await LocationBridge.startService(token ? { token } : undefined);
+      } catch (bridgeErr) {
+        console.warn("LocationBridge startService warning:", bridgeErr);
+      }
+
       this.nativeWatcherId = await BackgroundGeolocation.addWatcher(
         {
           backgroundMessage: "Virat CRM is actively logging field location.",
           backgroundTitle: "Field Location Tracking",
           requestPermissions: true,
           stale: false,
-          distanceFilter: 10,
+          distanceFilter: 0,
         },
         (location, error) => {
           if (error) {
@@ -306,9 +322,9 @@ class LocationEngine {
       return;
     }
 
-    // If first point upon login or 15 mins elapsed, persist immediately
+    // If first point upon login or 60 seconds elapsed, persist immediately
     const now = Date.now();
-    if (now - this.lastPersistedAt >= FIFTEEN_MINUTES_MS) {
+    if (now - this.lastPersistedAt >= PERSIST_INTERVAL_MS) {
       await this.persistCurrentCheckpoint();
     }
   }
@@ -321,10 +337,16 @@ class LocationEngine {
     const pos = this.latestPosition;
     this.lastPersistedAt = Date.now();
 
+    const token = typeof window !== "undefined" ? localStorage.getItem("virat_auth_token") : null;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     try {
       const res = await fetch("/api/location/batch-sync", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           locations: [
             {
@@ -338,6 +360,7 @@ class LocationEngine {
             },
           ],
         }),
+        keepalive: true,
       });
 
       if (!res.ok) {
@@ -448,6 +471,14 @@ class LocationEngine {
   public stopTracking(): void {
     this.isRunning = false;
 
+    if (this.isNative) {
+      try {
+        void LocationBridge.stopService();
+      } catch (bridgeErr) {
+        console.warn("LocationBridge stopService warning:", bridgeErr);
+      }
+    }
+
     if (this.watchId !== null && typeof navigator !== "undefined") {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
@@ -489,4 +520,3 @@ class LocationEngine {
 }
 
 export const locationEngine = new LocationEngine();
-

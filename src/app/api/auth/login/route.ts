@@ -1,8 +1,9 @@
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema/users";
 import { branches } from "@/server/db/schema/branches";
+import { employeeTrackingStatus } from "@/server/db/schema/employeeTrackingStatus";
 import { eq, or } from "drizzle-orm";
-import { login } from "@/server/lib/auth";
+import { login, encrypt } from "@/server/lib/auth";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
@@ -64,8 +65,42 @@ export async function POST(request: Request) {
     await db.update(users).set({ branchId }).where(eq(users.id, user.id));
   }
 
+  // Unlock employee tracking in database upon successful authentication
+  await db
+    .insert(employeeTrackingStatus)
+    .values({
+      employeeId: user.id,
+      isLockedOut: false,
+      lockoutReason: null,
+      isOnline: true,
+      lastUpdatedAt: new Date(),
+      locationPermissionStatus: "ALWAYS",
+    })
+    .onConflictDoUpdate({
+      target: employeeTrackingStatus.employeeId,
+      set: {
+        isLockedOut: false,
+        lockoutReason: null,
+        isOnline: true,
+        lastUpdatedAt: new Date(),
+      },
+    });
+
   // Create session
   await login(user.id);
 
-  return NextResponse.json({ success: true });
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const sessionToken = await encrypt({ userId: user.id, expires });
+
+  return NextResponse.json({
+    success: true,
+    token: sessionToken,
+    user: {
+      id: user.id,
+      role: user.role,
+      employeeCode: user.employeeCode,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    },
+  });
 }

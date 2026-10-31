@@ -7,7 +7,7 @@ import {
   type PermissionState,
   type LocationCoordinates,
 } from "@/lib/location-engine";
-import { isLockedOut, getLockoutReason } from "@/lib/offline-location-queue";
+import { isLockedOut, getLockoutReason, unlockSession } from "@/lib/offline-location-queue";
 import { PermissionRequiredModal } from "./PermissionRequiredModal";
 import { OfflineWarningBanner } from "./OfflineWarningBanner";
 import { LockoutScreen } from "./LockoutScreen";
@@ -56,6 +56,12 @@ export function LocationTrackerProvider({
 
   useEffect(() => {
     if (!user || user.role !== "Employee") return;
+
+    // A valid authenticated session clears any stale local lockout flag
+    if (user.isActive) {
+      setLockedOutState(false);
+      unlockSession();
+    }
 
     // Check permission flow on login for Employee
     const initEngine = async () => {

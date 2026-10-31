@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Suspense } from "react";
 import Link from "next/link";
+import { unlockSession, clearBufferedLocations } from "@/lib/offline-location-queue";
 
 function LoginContent() {
   const [employeeCode, setEmployeeCode] = useState("");
@@ -46,11 +47,23 @@ function LoginContent() {
 
       const data = (await res.json()) as {
         error?: string;
+        token?: string;
+        user?: { id: string; role: string };
         requireBranch?: boolean;
         branches?: { id: number; name: string }[];
       };
 
       if (res.ok) {
+        // Clear all lockout state and offline grace period timers on fresh login
+        unlockSession();
+        await clearBufferedLocations();
+        if (data.token) {
+          localStorage.setItem("virat_auth_token", data.token);
+        }
+        if (data.user?.id) {
+          localStorage.setItem("virat_auth_user_id", data.user.id);
+        }
+
         if (data.requireBranch) {
           const activeBranches = data.branches;
           setRequireBranch(true);
