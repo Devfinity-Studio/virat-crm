@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   "appId": "com.devfinity.viratcrm",
-  "appName": "Virat CRM",
+  "appName": "VBPL",
   "webDir": "out",
   "server": {
     "url": "https://virat-crm.vercel.app",

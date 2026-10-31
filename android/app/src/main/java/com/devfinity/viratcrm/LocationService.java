@@ -65,7 +65,7 @@ public class LocationService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "Field Location Tracking",
+                    "VBPL Location Tracking",
                     NotificationManager.IMPORTANCE_LOW
             );
             channel.setDescription("Logs shift mileage and location while on duty.");
@@ -79,7 +79,7 @@ public class LocationService extends Service {
 
     private void startInForeground() {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Virat CRM - Shift Active")
+                .setContentTitle("VBPL - Shift Active")
                 .setContentText("Field location tracking is active.")
                 .setSmallIcon(android.R.drawable.ic_menu_mylocation)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -215,3 +215,4 @@ public class LocationService extends Service {
         return null;
     }
 }
+

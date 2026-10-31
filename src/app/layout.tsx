@@ -8,15 +8,16 @@ import { SkeletonProvider } from "@/components/ui/skeleton-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "./_components/layout/CookieBanner";
 import { LocationTrackerProvider } from "./_components/location/LocationTrackerProvider";
+import { AppVersionGate } from "./_components/version/AppVersionGate";
 
 export const metadata: Metadata = {
-  title: "Virat CRM",
-  description: "CRM for workforce and sales management",
+  title: "VBPL",
+  description: "VBPL Mobile CRM for workforce and sales management",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Virat CRM",
+    title: "VBPL",
   },
   formatDetection: {
     telephone: false,
@@ -72,9 +73,11 @@ export default async function RootLayout({
       <body className="bg-background text-foreground selection:bg-primary/10 selection:text-primary min-h-screen antialiased">
         <TRPCReactProvider>
           <SkeletonProvider>
-            <LocationTrackerProvider>
-              {children}
-            </LocationTrackerProvider>
+            <AppVersionGate>
+              <LocationTrackerProvider>
+                {children}
+              </LocationTrackerProvider>
+            </AppVersionGate>
             <Toaster />
             <CookieBanner />
           </SkeletonProvider>

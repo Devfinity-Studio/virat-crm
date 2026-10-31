@@ -217,7 +217,7 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
       <div className={cn("border-border flex h-16 items-center border-b px-4", isCollapsed ? "justify-center" : "justify-between")}>
         {!isCollapsed && (
           <h1 className="text-primary text-xl font-bold tracking-tight">
-            Virat CRM
+            VBPL
           </h1>
         )}
         <button 

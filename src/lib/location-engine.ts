@@ -14,13 +14,7 @@ const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>(
   "BackgroundGeolocation",
 );
 
-interface LocationBridgePluginType {
-  startService(options?: { token?: string }): Promise<void>;
-  stopService(): Promise<void>;
-  setToken(options: { token: string }): Promise<void>;
-}
-
-const LocationBridge = registerPlugin<LocationBridgePluginType>("LocationBridge");
+import { LocationBridge } from "./version-checker";
 
 export type PermissionState = "GRANTED" | "DENIED" | "PROMPT" | "NOT_SUPPORTED";
 
@@ -257,8 +251,8 @@ class LocationEngine {
 
       this.nativeWatcherId = await BackgroundGeolocation.addWatcher(
         {
-          backgroundMessage: "Virat CRM is actively logging field location.",
-          backgroundTitle: "Field Location Tracking",
+          backgroundMessage: "VBPL is actively logging field location.",
+          backgroundTitle: "VBPL Location Tracking",
           requestPermissions: true,
           stale: false,
           distanceFilter: 0,
