@@ -12,6 +12,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { AlertTriangle, X } from "lucide-react";
 import { BottomNav } from "./BottomNav";
+import { locationEngine } from "@/lib/location-engine";
+import { unlockSession } from "@/lib/offline-location-queue";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isSyncing, pendingCount } = useSyncManager();
@@ -19,6 +21,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const handleLogout = async () => {
+    locationEngine.stopTracking();
+    unlockSession();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("virat_auth_token");
+      localStorage.removeItem("virat_auth_user_id");
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };

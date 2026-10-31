@@ -88,6 +88,8 @@ export const locationRouter = createTRPCRouter({
             lastUpdatedAt: new Date(),
             isOnline: true,
             locationPermissionStatus: "ALWAYS",
+            isLockedOut: false,
+            lockoutReason: null,
           },
         });
 
@@ -140,10 +142,10 @@ export const locationRouter = createTRPCRouter({
             lastUpdatedAt: new Date(),
             locationPermissionStatus: input.locationPermissionStatus,
             isOnline: input.isOnline ?? undefined,
-            isLockedOut: isPermissionDisabled ? true : undefined,
+            isLockedOut: isPermissionDisabled,
             lockoutReason: isPermissionDisabled
               ? "Location permission denied or disabled"
-              : undefined,
+              : null,
           },
         });
 

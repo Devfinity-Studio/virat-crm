@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { locationEngine } from "@/lib/location-engine";
+import { unlockSession } from "@/lib/offline-location-queue";
 
 export default function ProfilePage() {
   const { data: user, isLoading } = api.users.getMe.useQuery();
@@ -183,6 +185,12 @@ export default function ProfilePage() {
                 variant="destructive"
                 size="sm"
                 onClick={async () => {
+                  locationEngine.stopTracking();
+                  unlockSession();
+                  if (typeof window !== "undefined") {
+                    localStorage.removeItem("virat_auth_token");
+                    localStorage.removeItem("virat_auth_user_id");
+                  }
                   await fetch("/api/auth/logout", { method: "POST" });
                   window.location.href = "/login";
                 }}

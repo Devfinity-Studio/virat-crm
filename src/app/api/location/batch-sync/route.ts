@@ -92,6 +92,8 @@ export async function POST(request: NextRequest) {
           lastSpeed: latest.speed ?? null,
           lastUpdatedAt: new Date(),
           isOnline: true,
+          isLockedOut: false,
+          lockoutReason: null,
         },
       });
 

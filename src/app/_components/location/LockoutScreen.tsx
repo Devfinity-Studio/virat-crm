@@ -2,7 +2,7 @@
 
 import { AlertOctagon, CheckCircle2, PhoneCall, RefreshCw, ArrowRight, Wifi, MapPin } from "lucide-react";
 import { useState } from "react";
-import { flushOfflineQueue, setLockedOut } from "@/lib/offline-location-queue";
+import { flushOfflineQueue, setLockedOut, unlockSession } from "@/lib/offline-location-queue";
 
 interface Props {
   reason?: string;
@@ -32,6 +32,7 @@ export function LockoutScreen({ reason }: Props) {
   };
 
   const handleReturnToLogin = () => {
+    unlockSession();
     setLockedOut(false);
     window.location.href = "/login?reason=offline_timeout";
   };

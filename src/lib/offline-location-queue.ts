@@ -218,6 +218,13 @@ export function isLockedOut(): boolean {
   return getStorageItem(STORAGE_KEYS.IS_LOCKED_OUT) === "true";
 }
 
+export function unlockSession(): void {
+  removeStorageItem(STORAGE_KEYS.IS_LOCKED_OUT);
+  removeStorageItem(STORAGE_KEYS.LOCKOUT_REASON);
+  removeStorageItem(STORAGE_KEYS.PENDING_LOCKOUT_NOTIFY);
+  removeStorageItem(STORAGE_KEYS.OFFLINE_STARTED_AT);
+}
+
 export function setLockedOut(locked: boolean, reason?: string): void {
   if (locked) {
     setStorageItem(STORAGE_KEYS.IS_LOCKED_OUT, "true");
@@ -226,9 +233,7 @@ export function setLockedOut(locked: boolean, reason?: string): void {
     }
     setStorageItem(STORAGE_KEYS.PENDING_LOCKOUT_NOTIFY, "true");
   } else {
-    removeStorageItem(STORAGE_KEYS.IS_LOCKED_OUT);
-    removeStorageItem(STORAGE_KEYS.LOCKOUT_REASON);
-    removeStorageItem(STORAGE_KEYS.PENDING_LOCKOUT_NOTIFY);
+    unlockSession();
   }
 }
 
@@ -246,8 +251,31 @@ export async function flushOfflineQueue(): Promise<{
 }> {
   const locations = await getBufferedLocations();
 
-  // If buffer expired (> 22 mins offline), enforce hard lockout
-  if (isBufferExpired() || isLockedOut()) {
+  // If buffer expired (> 22 mins offline), check if we can sync back up
+  if (isBufferExpired()) {
+    // If internet is connected, sync remaining points and recover
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      if (locations.length > 0) {
+        try {
+          const res = await fetch("/api/location/batch-sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ locations }),
+          });
+          if (res.ok) {
+            await clearBufferedLocations();
+            unlockSession();
+            return { success: true, syncedCount: locations.length, lockedOut: false };
+          }
+        } catch {
+          // Network still failed
+        }
+      } else {
+        unlockSession();
+        return { success: true, syncedCount: 0, lockedOut: false };
+      }
+    }
+
     setLockedOut(true, "Offline grace period (22 mins) expired.");
 
     // Sync whatever points we collected before lockout
@@ -282,6 +310,31 @@ export async function flushOfflineQueue(): Promise<{
       // ignore
     }
 
+    return {
+      success: true,
+      syncedCount: locations.length,
+      lockedOut: true,
+    };
+  }
+
+  // If locked out flag is still present in storage but device is online, attempt sync
+  if (isLockedOut()) {
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      if (locations.length > 0) {
+        try {
+          const res = await fetch("/api/location/batch-sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ locations }),
+          });
+          if (res.ok) {
+            await clearBufferedLocations();
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
     return {
       success: true,
       syncedCount: locations.length,
