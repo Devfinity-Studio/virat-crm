@@ -38,3 +38,7 @@
   - Goal: Remediate architectural risks and technical debt documented in CONCERNS.md — root script consolidation, mobile geolocation hardening, router service layer extraction, and dynamic feature access default synchronization.
   - Requirements: DEBT-01, DEBT-02, DEBT-03, DEBT-04
 
+- **Phase 56: Codebase, Directory & Dependency Cleanup**
+  - Goal: Remove unnecessary files, folders, and dead scratch directories; eliminate unused libraries and redundant npm packages; prune dead environment variables; and clean unused imports and dead code references across the repository.
+  - Requirements: CLEAN-01, CLEAN-02, CLEAN-03, CLEAN-04
+

@@ -42,6 +42,13 @@
 - **DEBT-03**: **Router Modularization & Service Layer**: Extract complex transaction and business logic from large routers (`sales.ts`, `users.ts`) into service helpers (`src/server/lib/services/`).
 - **DEBT-04**: **Dynamic Feature Access Default Synchronization**: Implement automatic initialization sync ensuring all defined system features have default permission rows seeded in `rolePermissions`.
 
+## 8. Codebase & Dependency Cleanup (`CLEAN-xx`)
+
+- **CLEAN-01**: **File & Directory Cleanup**: Audit and remove unnecessary files, temporary build folders, dead scratch files, and obsolete artifacts across the workspace.
+- **CLEAN-02**: **Unused Dependency Removal**: Identify and remove unused or redundant npm packages/libraries from `package.json` and prune `pnpm-lock.yaml`.
+- **CLEAN-03**: **Environment Variable Audit**: Clean up unused environment variables from `src/env.js`, `.env`, and `.env.example`, ensuring all active variables are necessary and documented.
+- **CLEAN-04**: **Dead Code & Reference Cleanup**: Clean up unused code references, orphaned imports, dead variables, and obsolete exports across `src/` and `tests/`.
+
 ## Traceability
 
 | REQ-ID    | Phase | Status |
@@ -67,4 +74,8 @@
 | DEBT-02   | 55    | [x]    |
 | DEBT-03   | 55    | [x]    |
 | DEBT-04   | 55    | [x]    |
+| CLEAN-01  | 56    | [ ]    |
+| CLEAN-02  | 56    | [ ]    |
+| CLEAN-03  | 56    | [ ]    |
+| CLEAN-04  | 56    | [ ]    |
 
