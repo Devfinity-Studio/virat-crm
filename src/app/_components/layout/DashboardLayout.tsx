@@ -76,7 +76,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (path.startsWith("/admin/imports")) return "Bulk Data Import";
     if (path.startsWith("/admin/developer")) return "Developer Sandbox Console";
     if (path.startsWith("/profile")) return "User Profile Settings";
-    return "Virat CRM Portal";
+    return "VBPL Portal";
   };
 
   return (

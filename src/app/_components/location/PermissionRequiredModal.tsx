@@ -25,7 +25,7 @@ export function PermissionRequiredModal({ isOpen, onGranted }: Props) {
         onGranted();
       } else {
         setErrorMsg(
-          "Location access was not enabled. Please open Android Settings > Apps > Virat CRM > Permissions > Location, and select 'Allow all the time'.",
+          "Location access was not enabled. Please open Android Settings > Apps > VBPL > Permissions > Location, and select 'Allow all the time'.",
         );
       }
     } catch {

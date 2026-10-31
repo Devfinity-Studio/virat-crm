@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">virat-crm</string>
-    <string name="title_activity_main">virat-crm</string>
+    <string name="app_name">VBPL</string>
+    <string name="title_activity_main">VBPL</string>
     <string name="package_name">com.devfinity.viratcrm</string>
     <string name="custom_url_scheme">com.devfinity.viratcrm</string>
 </resources>

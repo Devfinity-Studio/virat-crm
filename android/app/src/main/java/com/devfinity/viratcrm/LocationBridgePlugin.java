@@ -3,9 +3,12 @@ package com.devfinity.viratcrm;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 
+import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -13,11 +16,37 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
  * Capacitor Bridge Plugin to coordinate native LocationService lifecycle
- * directly from TypeScript/JavaScript.
+ * and provide app version telemetry directly to TypeScript/JavaScript.
  */
 @CapacitorPlugin(name = "LocationBridge")
 public class LocationBridgePlugin extends Plugin {
     private static final String TAG = "ViratLocationBridge";
+
+    @PluginMethod
+    public void getAppInfo(PluginCall call) {
+        try {
+            Context context = getContext();
+            PackageManager pm = context.getPackageManager();
+            PackageInfo pInfo = pm.getPackageInfo(context.getPackageName(), 0);
+
+            long buildNumber;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                buildNumber = pInfo.getLongVersionCode();
+            } else {
+                buildNumber = pInfo.versionCode;
+            }
+
+            JSObject ret = new JSObject();
+            ret.put("name", "VBPL");
+            ret.put("packageId", context.getPackageName());
+            ret.put("versionName", pInfo.versionName != null ? pInfo.versionName : "1.1.0");
+            ret.put("versionCode", buildNumber);
+            call.resolve(ret);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get app info: " + e.getMessage());
+            call.reject("Failed to get app info: " + e.getMessage());
+        }
+    }
 
     @PluginMethod
     public void startService(PluginCall call) {

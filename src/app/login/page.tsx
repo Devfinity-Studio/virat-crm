@@ -98,7 +98,7 @@ function LoginContent() {
             <ShieldCheck className="h-9 w-9 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            Virat CRM
+            VBPL
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-500">
             Field Workforce & Management Portal
@@ -252,7 +252,7 @@ function LoginContent() {
               Need Dispatch Assistance? Call Support
             </a>
             <p className="text-xs text-slate-400">
-              Virat CRM Field Workforce Edition • TLS Encrypted
+              VBPL Field Workforce Edition • TLS Encrypted
             </p>
           </div>
         </div>
