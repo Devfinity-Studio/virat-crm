@@ -64,3 +64,4 @@ completed: 2026-10-31
 - `Test-Path src/server/db/schema/set-password.ts, src/server/db/schema/fix-users.ts` -> all False
 - `Test-Path scripts/set-password.ts, docs/DEPLOYMENT.md, docs/USER-GUIDE.md` -> all True
 - `pnpm vitest run` -> 37 passed (37)
+

@@ -17,7 +17,6 @@ import {
   Clock,
   TrendingUp,
   Wallet,
-  Printer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateSalesXLSX, generateAttendanceXLSX } from "@/lib/excel";
@@ -237,7 +236,7 @@ function ReportsPageContent() {
                   value={
                     isForecastLoading
                       ? "Analyzing..."
-                      : `₹${forecastData?.stats.nextMonthRevenue.toLocaleString() ?? "0"}`
+                      : `â‚¹${forecastData?.stats.nextMonthRevenue.toLocaleString() ?? "0"}`
                   }
                   icon={TrendingUp}
                   color="blue"
@@ -257,7 +256,7 @@ function ReportsPageContent() {
                   value={
                     isForecastLoading
                       ? "Analyzing..."
-                      : `${forecastData?.stats.confidence ?? 50}% R² Score`
+                      : `${forecastData?.stats.confidence ?? 50}% RÂ² Score`
                   }
                   icon={CheckCircle2}
                   color="green"
@@ -333,7 +332,7 @@ function ReportsPageContent() {
                           stroke="#94a3b8"
                           fontSize={11}
                           tickFormatter={(v) =>
-                            `₹${v >= 1000 ? v / 1000 + "k" : v}`
+                            `â‚¹${v >= 1000 ? v / 1000 + "k" : v}`
                           }
                         />
                         <ChartTooltip
@@ -344,7 +343,7 @@ function ReportsPageContent() {
                                 ? Number(value)
                                 : null;
                             return [
-                              numVal ? `₹${numVal.toLocaleString()}` : "N/A",
+                              numVal ? `â‚¹${numVal.toLocaleString()}` : "N/A",
                               String(name),
                             ];
                           }}
@@ -449,13 +448,13 @@ function ReportsPageContent() {
                               {f.period}
                             </td>
                             <td className="px-6 py-4 text-sm font-medium text-red-600">
-                              ₹{f.pessimistic.toLocaleString()}
+                              â‚¹{f.pessimistic.toLocaleString()}
                             </td>
                             <td className="px-6 py-4 text-sm font-bold text-indigo-600">
-                              ₹{f.revenue.toLocaleString()}
+                              â‚¹{f.revenue.toLocaleString()}
                             </td>
                             <td className="px-6 py-4 text-sm font-medium text-green-600">
-                              ₹{f.optimistic.toLocaleString()}
+                              â‚¹{f.optimistic.toLocaleString()}
                             </td>
                             <td className="px-6 py-4">
                               <span
@@ -554,13 +553,13 @@ function ReportsPageContent() {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                   title="Total Revenue"
-                  value={`₹${reportData?.summary.revenue.toLocaleString() ?? "0"}`}
+                  value={`â‚¹${reportData?.summary.revenue.toLocaleString() ?? "0"}`}
                   icon={TrendingUp}
                   color="blue"
                 />
                 <StatCard
                   title="Pending Balance"
-                  value={`₹${reportData?.summary.balance.toLocaleString() ?? "0"}`}
+                  value={`â‚¹${reportData?.summary.balance.toLocaleString() ?? "0"}`}
                   icon={Wallet}
                   color="red"
                 />
@@ -608,7 +607,7 @@ function ReportsPageContent() {
                                   Revenue
                                 </p>
                                 <p className="text-lg font-bold text-gray-900">
-                                  ₹{year.revenue.toLocaleString()}
+                                  â‚¹{year.revenue.toLocaleString()}
                                 </p>
                               </div>
                               <div>
@@ -822,7 +821,7 @@ function ReportsPageContent() {
                                   {s.customerName}
                                 </td>
                                 <td className="px-6 py-4 text-sm font-bold">
-                                  ₹
+                                  â‚¹
                                   {parseFloat(s.invoiceAmount).toLocaleString()}
                                 </td>
                                 <td className="px-6 py-4">

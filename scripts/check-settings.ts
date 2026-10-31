@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { db } from "./src/server/db/index.js";
-import { systemSettings } from "./src/server/db/schema/index.js";
+import { db } from "@/server/db";
+import { systemSettings } from "@/server/db/schema";
 
 async function main() {
   console.log("Fetching system settings from database...");

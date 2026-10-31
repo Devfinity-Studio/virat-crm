@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { db } from "./src/server/db/index.js";
-import { rolePermissions } from "./src/server/db/schema/index.js";
+import { db } from "@/server/db";
+import { rolePermissions } from "@/server/db/schema";
 
 async function main() {
   console.log("Fetching role permissions from database...");

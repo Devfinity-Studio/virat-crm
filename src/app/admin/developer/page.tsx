@@ -4,11 +4,6 @@ import { DashboardLayout } from "@/app/_components/layout/DashboardLayout";
 import { api } from "@/trpc/react";
 import {
   ShieldAlert,
-  Users,
-  Lock,
-  Unlock,
-  EyeOff,
-  Server,
   AlertTriangle,
   Trash2,
   RefreshCw,
@@ -45,7 +40,7 @@ export default function DeveloperPage() {
   const { data: user, isLoading: isUserLoading } = api.users.getMe.useQuery();
   const utils = api.useUtils();
 
-  const { data: settings, isLoading: isSettingsLoading } =
+  const { data: settings } =
     api.developer.getSettings.useQuery(undefined, {
       enabled: user?.role === "Developer",
     });

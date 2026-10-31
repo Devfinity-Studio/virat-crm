@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { db } from "./src/server/db/index.js";
-import { breadcrumbs, users } from "./src/server/db/schema/index.js";
+import { db } from "@/server/db";
+import { breadcrumbs, users } from "@/server/db/schema";
 import { inArray, desc, eq } from "drizzle-orm";
 
 async function main() {

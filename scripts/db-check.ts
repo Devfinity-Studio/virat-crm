@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { db } from "./src/server/db/index.js";
+import { db } from "@/server/db";
 import { sql } from "drizzle-orm";
-import { breadcrumbs } from "./src/server/db/schema/index.js";
+import { breadcrumbs } from "@/server/db/schema";
 import { gte } from "drizzle-orm";
 
 async function main() {

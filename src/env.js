@@ -17,10 +17,6 @@ export const env = createEnv({
     R2_SECRET_ACCESS_KEY: z.string().min(1),
     R2_BUCKET_NAME: z.string().min(1),
     VAPID_PRIVATE_KEY: z.string().min(1),
-    TWILIO_ACCOUNT_SID: z.string().optional(),
-    TWILIO_AUTH_TOKEN: z.string().optional(),
-    TWILIO_PHONE_NUMBER: z.string().optional(),
-    RESEND_API_KEY: z.string().optional(),
   },
 
   /**
@@ -63,10 +59,6 @@ export const env = createEnv({
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
-    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
-    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
-    TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     NEXT_PUBLIC_PINCODE_API_URL: process.env.NEXT_PUBLIC_PINCODE_API_URL,
     NEXT_PUBLIC_GEOCODING_API_URL: process.env.NEXT_PUBLIC_GEOCODING_API_URL,
