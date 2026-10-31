@@ -23,6 +23,7 @@ public class LocationBridgePlugin extends Plugin {
     private static final String TAG = "ViratLocationBridge";
 
     @PluginMethod
+    @SuppressWarnings("deprecation")
     public void getAppInfo(PluginCall call) {
         try {
             Context context = getContext();
