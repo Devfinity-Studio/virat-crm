@@ -51,3 +51,4 @@ export function AppVersionGate({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+
