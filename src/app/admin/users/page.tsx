@@ -15,7 +15,10 @@ import {
   BarChart3,
   Lock,
   Edit,
+  MoreVertical,
+  X,
 } from "lucide-react";
+import { useLongPress } from "@/hooks/use-long-press";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -123,6 +126,117 @@ interface UserType {
     | null;
 }
 
+
+function UserTableRow({
+  user,
+  onOpenMenu,
+  onNavigate,
+}: {
+  user: UserType;
+  onOpenMenu: (user: UserType, isMobileSheet?: boolean, pos?: { x: number; y: number }) => void;
+  onNavigate: (userId: string) => void;
+}) {
+  const longPress = useLongPress({
+    threshold: 450,
+    moveTolerance: 12,
+    onLongPress: (e) => {
+      let x = typeof window !== "undefined" ? window.innerWidth / 2 : 100;
+      let y = typeof window !== "undefined" ? window.innerHeight / 2 : 100;
+      if ("touches" in e && e.touches[0]) {
+        x = e.touches[0].clientX;
+        y = e.touches[0].clientY;
+      }
+      onOpenMenu(user, true, { x, y });
+    },
+    onClick: () => {
+      onNavigate(user.id);
+    },
+  });
+
+  return (
+    <TableRow
+      key={user.id}
+      className="cursor-pointer border-b border-slate-100/60 transition-colors select-none hover:bg-slate-50/50 active:bg-blue-50/40"
+      onTouchStart={longPress.onTouchStart}
+      onTouchMove={longPress.onTouchMove}
+      onTouchEnd={longPress.onTouchEnd}
+      onTouchCancel={longPress.onTouchCancel}
+      onClick={longPress.onClick}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onOpenMenu(user, false, { x: e.clientX, y: e.clientY });
+      }}
+    >
+      <TableCell className="font-medium">
+        <div className="flex flex-col">
+          <span className="font-semibold text-slate-900">
+            {user.firstName} {user.lastName}
+          </span>
+          <span className="text-xs font-normal text-slate-400">
+            {user.email}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <code className="rounded-lg border border-slate-200/50 bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700">
+          {user.employeeCode}
+        </code>
+      </TableCell>
+      <TableCell>
+        <Badge
+          variant={
+            user.role === "Admin"
+              ? "default"
+              : user.role === "Manager"
+                ? "secondary"
+                : "outline"
+          }
+          className="rounded-lg px-2 py-0.5 text-[10px] font-bold"
+        >
+          {user.role}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-sm font-medium text-slate-600">
+        {user.branch?.name ?? "N/A"}
+      </TableCell>
+      <TableCell className="text-sm font-medium text-slate-500">
+        {user.managers && user.managers.length > 0
+          ? user.managers
+              .map(
+                (m) =>
+                  `${m.manager.firstName} ${m.manager.lastName}`,
+              )
+              .join(", ")
+          : "-"}
+      </TableCell>
+      <TableCell>
+        {user.isActive ? (
+          <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-green-700 uppercase">
+            Active
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-red-700 uppercase">
+            Inactive
+          </span>
+        )}
+      </TableCell>
+      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenMenu(user, true, { x: e.clientX, y: e.clientY });
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-800 active:scale-95 transition-all"
+          title="Open Employee Actions"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function UserList() {
   const router = useRouter();
   const utils = api.useUtils();
@@ -142,6 +256,7 @@ function UserList() {
     x: number;
     y: number;
     user: UserType;
+    isMobileSheet?: boolean;
   } | null>(null);
   const [resetUser, setResetUser] = useState<UserType | null>(null);
   const [newPassword, setNewPassword] = useState("");
@@ -227,12 +342,16 @@ function UserList() {
     );
   }
 
-  const handleContextMenu = (e: React.MouseEvent, user: UserType) => {
-    e.preventDefault();
+  const handleOpenMenu = (
+    user: UserType,
+    isMobileSheet = false,
+    pos?: { x: number; y: number },
+  ) => {
     setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
+      x: pos?.x ?? (typeof window !== "undefined" ? window.innerWidth / 2 : 100),
+      y: pos?.y ?? (typeof window !== "undefined" ? window.innerHeight / 2 : 100),
       user,
+      isMobileSheet,
     });
   };
 
@@ -431,13 +550,16 @@ function UserList() {
                   <TableHead className="text-xs font-bold tracking-wider text-slate-500 uppercase">
                     Status
                   </TableHead>
+                  <TableHead className="w-12 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers?.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="h-32 text-center font-medium text-slate-400 italic"
                     >
                       No employees match your selected categories.
@@ -445,66 +567,12 @@ function UserList() {
                   </TableRow>
                 ) : (
                   filteredUsers?.map((user) => (
-                    <TableRow
+                    <UserTableRow
                       key={user.id}
-                      className="cursor-pointer border-b border-slate-100/60 transition-colors select-none hover:bg-slate-50/50"
-                      onClick={() => router.push(`/admin/users/${user.id}`)}
-                      onContextMenu={(e) => handleContextMenu(e, user)}
-                    >
-                      <TableCell className="font-medium">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-900">
-                            {user.firstName} {user.lastName}
-                          </span>
-                          <span className="text-xs font-normal text-slate-400">
-                            {user.email}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="rounded-lg border border-slate-200/50 bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700">
-                          {user.employeeCode}
-                        </code>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            user.role === "Admin"
-                              ? "default"
-                              : user.role === "Manager"
-                                ? "secondary"
-                                : "outline"
-                          }
-                          className="rounded-lg px-2 py-0.5 text-[10px] font-bold"
-                        >
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm font-medium text-slate-600">
-                        {user.branch?.name ?? "N/A"}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium text-slate-500">
-                        {user.managers && user.managers.length > 0
-                          ? user.managers
-                              .map(
-                                (m) =>
-                                  `${m.manager.firstName} ${m.manager.lastName}`,
-                              )
-                              .join(", ")
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {user.isActive ? (
-                          <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-green-700 uppercase">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-red-700 uppercase">
-                            Inactive
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                      user={user}
+                      onOpenMenu={handleOpenMenu}
+                      onNavigate={(userId) => router.push(`/admin/users/${userId}`)}
+                    />
                   ))
                 )}
               </TableBody>
@@ -513,30 +581,178 @@ function UserList() {
         </CardContent>
       </Card>
 
-      {/* Absolute context menu overlay */}
+      {/* Context Menu: Mobile Bottom Sheet + Desktop Floating Dropdown */}
       {contextMenu && (
         <>
+          {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-xs transition-opacity"
             onClick={() => setContextMenu(null)}
             onContextMenu={(e) => {
               e.preventDefault();
               setContextMenu(null);
             }}
           />
+
+          {/* Mobile Action Sheet (Touch screens / Mobile phones) */}
+          <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t border-slate-200 bg-white p-5 shadow-2xl sm:hidden animate-in slide-in-from-bottom duration-200">
+            {/* Grab bar */}
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-300" />
+
+            <div className="mb-4 border-b border-slate-100 pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                    Employee Actions
+                  </p>
+                  <p className="text-base font-extrabold text-slate-900">
+                    {contextMenu.user.firstName} {contextMenu.user.lastName}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {contextMenu.user.employeeCode}
+                  </Badge>
+                  <Badge className="text-xs font-bold">
+                    {contextMenu.user.role}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleActiveMutation.mutate({
+                    userId: contextMenu.user.id,
+                    isActive: !contextMenu.user.isActive,
+                  });
+                  setContextMenu(null);
+                }}
+                className={cn(
+                  "flex min-h-[50px] w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-sm font-bold transition-colors active:scale-[0.99]",
+                  contextMenu.user.isActive
+                    ? "bg-red-50 text-red-700 hover:bg-red-100"
+                    : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+                )}
+              >
+                {contextMenu.user.isActive ? (
+                  <>
+                    <XCircle className="h-5 w-5 text-red-600 shrink-0" />
+                    <span>Set as Inactive</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                    <span>Set as Active</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(`/admin/live-map?userId=${contextMenu.user.id}`);
+                  setContextMenu(null);
+                }}
+                className="flex min-h-[50px] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm font-bold text-slate-800 hover:bg-slate-50 active:scale-[0.99] transition-colors"
+              >
+                <MapPin className="h-5 w-5 text-blue-600 shrink-0" />
+                <span>Locate on Live Map</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(`/admin/reports?userId=${contextMenu.user.id}`);
+                  setContextMenu(null);
+                }}
+                className="flex min-h-[50px] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm font-bold text-slate-800 hover:bg-slate-50 active:scale-[0.99] transition-colors"
+              >
+                <BarChart3 className="h-5 w-5 text-indigo-600 shrink-0" />
+                <span>View Daily Reports</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEditUser(contextMenu.user);
+                  setEditForm({
+                    firstName: contextMenu.user.firstName ?? "",
+                    lastName: contextMenu.user.lastName ?? "",
+                    fatherName: contextMenu.user.fatherName ?? "",
+                    email: contextMenu.user.email ?? "",
+                    employeeCode: contextMenu.user.employeeCode ?? "",
+                    role: contextMenu.user.role ?? "",
+                    joiningRole: contextMenu.user.joiningRole ?? "",
+                    joiningDate: (contextMenu.user.joiningDate ? new Date(contextMenu.user.joiningDate).toISOString().split('T')[0] : "") || "",
+                    bloodGroup: (contextMenu.user as any).bloodGroup ?? "O+",
+                    dob: contextMenu.user.dob ? new Date(contextMenu.user.dob).toISOString().split('T')[0] : "",
+                    branchId: contextMenu.user.branchId
+                      ? contextMenu.user.branchId.toString()
+                      : "none",
+                    managerIds: contextMenu.user.managers
+                      ? contextMenu.user.managers.map((m: any) => m.manager.manager.id || m.manager.id)
+                      : [],
+                  });
+                  setContextMenu(null);
+                }}
+                className="flex min-h-[50px] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm font-bold text-slate-800 hover:bg-slate-50 active:scale-[0.99] transition-colors"
+              >
+                <Edit className="h-5 w-5 text-amber-600 shrink-0" />
+                <span>Edit Details</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPromoteUser(contextMenu.user);
+                  setPromoteForm({ role: contextMenu.user.role ?? "", date: new Date().toISOString().split('T')[0] });
+                  setContextMenu(null);
+                }}
+                className="flex min-h-[50px] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm font-bold text-slate-800 hover:bg-slate-50 active:scale-[0.99] transition-colors"
+              >
+                <Users className="h-5 w-5 text-teal-600 shrink-0" />
+                <span>Promote Employee</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setResetUser(contextMenu.user);
+                  setContextMenu(null);
+                }}
+                className="flex min-h-[50px] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm font-bold text-slate-800 hover:bg-slate-50 active:scale-[0.99] transition-colors"
+              >
+                <Lock className="h-5 w-5 text-purple-600 shrink-0" />
+                <span>Reset Password</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setContextMenu(null)}
+              className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-slate-100 text-sm font-bold text-slate-700 hover:bg-slate-200 active:scale-[0.99] transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Desktop Floating Context Menu (anchored at cursor, hidden on mobile) */}
           <div
-            className="animate-in fade-in slide-in-from-top-2 fixed z-50 min-w-[210px] rounded-2xl border border-slate-200/80 bg-white/95 p-1.5 shadow-2xl backdrop-blur-md duration-100"
+            className="animate-in fade-in slide-in-from-top-2 fixed z-50 hidden sm:block min-w-[220px] rounded-2xl border border-slate-200/80 bg-white/95 p-1.5 shadow-2xl backdrop-blur-md duration-100"
             style={{
               left: Math.min(
                 contextMenu.x,
                 typeof window !== "undefined"
-                  ? window.innerWidth - 230
+                  ? window.innerWidth - 240
                   : contextMenu.x,
               ),
               top: Math.min(
                 contextMenu.y,
                 typeof window !== "undefined"
-                  ? window.innerHeight - 200
+                  ? window.innerHeight - 280
                   : contextMenu.y,
               ),
             }}
@@ -640,7 +856,6 @@ function UserList() {
               <Users className="h-4 w-4 text-slate-400" />
               <span>Promote Employee</span>
             </button>
-
 
             <button
               onClick={() => {
