@@ -55,3 +55,4 @@ export function OfflineWarningBanner() {
     </div>
   );
 }
+

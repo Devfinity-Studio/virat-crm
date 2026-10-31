@@ -36,3 +36,4 @@ export const adminAlertsRelations = relations(adminAlerts, ({ one }) => ({
     references: [users.id],
   }),
 }));
+

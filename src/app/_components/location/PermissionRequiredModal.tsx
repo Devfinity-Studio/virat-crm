@@ -88,3 +88,4 @@ export function PermissionRequiredModal({ isOpen, onGranted }: Props) {
     </div>
   );
 }
+
