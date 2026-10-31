@@ -160,7 +160,7 @@ export default function ReplacementsDashboard() {
         ) : (
           <div className="flex flex-col gap-4">
             {filteredReplacements.map((req) => (
-              <Card key={req.id} className="overflow-hidden odd:bg-white even:bg-slate-50 dark:odd:bg-slate-900 dark:even:bg-slate-800/50 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={req.id} className="overflow-hidden odd:bg-white even:bg-slate-50 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="truncate text-base">

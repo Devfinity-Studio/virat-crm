@@ -208,7 +208,7 @@ export function MileageReportList({ isManager, isAdmin }: { isManager: boolean, 
                   {data?.records.map((r) => (
                     <tr
                       key={r.id}
-                      className="transition-colors odd:bg-white even:bg-slate-100 hover:bg-slate-200/50 dark:odd:bg-slate-900 dark:even:bg-slate-800 dark:hover:bg-slate-800/80"
+                      className="transition-colors odd:bg-white even:bg-slate-100 hover:bg-slate-200/50"
                     >
                       <td className="px-6 py-4 font-medium whitespace-nowrap text-slate-900">
                         {r.date}

@@ -3,8 +3,6 @@
 @import "shadcn/tailwind.css";
 @import "leaflet/dist/leaflet.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme {
   --font-sans:
     var(--font-roboto), ui-sans-serif, system-ui, sans-serif,
@@ -54,33 +52,34 @@
 }
 
 :root {
-  --background: oklch(0.95 0.04 250); 
-  --foreground: oklch(0.15 0.05 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.05 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.05 250);
-  --primary: oklch(0.55 0.3 260); /* Extremely vibrant, deep purple-blue */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.01 240);
-  --secondary-foreground: oklch(0.2 0.02 240);
-  --muted: oklch(0.96 0.01 240);
-  --muted-foreground: oklch(0.5 0.02 240);
-  --accent: oklch(0.97 0.01 240);
-  --accent-foreground: oklch(0.2 0.02 240);
-  --destructive: oklch(0.6 0.2 25);
-  --border: oklch(0.94 0.01 240);
-  --input: oklch(0.94 0.01 240);
-  --ring: oklch(0.6 0.18 255);
-  --radius: 0.875rem; /* Larger corners for soft modernism */
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.2 0.02 240);
-  --sidebar-primary: oklch(0.6 0.18 255);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.98 0.005 240);
-  --sidebar-accent-foreground: oklch(0.2 0.02 240);
-  --sidebar-border: oklch(0.96 0.01 240);
-  --sidebar-ring: oklch(0.6 0.18 255);
+  /* Strict Light Mode Palette (Stitch MCP design tokens) */
+  --background: #F8FAFC; 
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #2563EB; /* Royal Blue */
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #EEF2F6;
+  --accent-foreground: #0F172A;
+  --destructive: #DC2626; /* Crimson Red */
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #2563EB;
+  --radius: 0.75rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #2563EB;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F8FAFC;
+  --sidebar-accent-foreground: #0F172A;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #2563EB;
 
   /* Soft Modernism Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -98,16 +97,17 @@
   }
   body {
     @apply text-foreground selection:bg-primary/10 selection:text-primary antialiased;
-    background: linear-gradient(135deg, oklch(0.95 0.04 250), oklch(0.93 0.06 280));
-    background-attachment: fixed;
-    /* PWA Safe Area Support */
+    background-color: #F8FAFC;
+    /* PWA & APK Safe Area Support */
     padding-bottom: env(safe-area-inset-bottom);
+    min-height: 100dvh;
+    overflow-x: hidden;
   }
   html {
     @apply font-sans;
     overscroll-behavior-y: none;
     height: 100%;
-    /* Force Light Mode */
+    /* Strict Light Mode Only */
     color-scheme: light;
   }
 
