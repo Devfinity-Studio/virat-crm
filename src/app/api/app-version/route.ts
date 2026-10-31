@@ -31,3 +31,4 @@ export async function GET() {
     packageId: "com.devfinity.viratcrm",
   });
 }
+
