@@ -156,3 +156,4 @@ function BottomNavContent({ pathname }: { pathname: string }) {
     </nav>
   );
 }
+
