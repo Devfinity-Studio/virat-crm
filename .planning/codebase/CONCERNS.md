@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: 8c574802947c74013f90c4768608279f0dee5699
+last_mapped_commit: e275cf5fb6c922764755332ce047fcfbe7f5b6d4
 ---
 
 # Codebase Concerns
@@ -29,6 +29,10 @@ last_mapped_commit: 8c574802947c74013f90c4768608279f0dee5699
 ### 5. Dynamic Feature Access Default States (`DEBT-04`)
 - **Status:** Resolved in Phase 55.
 - **Remediation:** Created `src/server/lib/permissions.ts` with `syncDefaultRolePermissions`, which automatically detects missing `(role, featureKey)` combinations and seeds appropriate default permissions for all roles. Registered in `permissionsRouter.getAll`.
+
+### 6. Codebase, Dependency & Environment Cleanup (`CLEAN-01`..`CLEAN-04`)
+- **Status:** Resolved in Phase 56.
+- **Remediation:** Purged `.planning_temp/`, `.temp-reports/`, `out/`, and `scratch/` (38 scripts). Removed misplaced schema scripts (`set-password.ts` moved to `scripts/`, `fix-users.ts` deleted). Consolidated root documentation guides into `docs/`. Removed 11 unreferenced packages (`calender`, `dlx`, `tabs`, `@skelon/core`, `tw-animate-css`, `dagre`, `@types/dagre`, `reactflow`, `shadcn`, `twilio`, `resend`) and pruned 338 transitive packages from lockfile. Pruned unused Twilio/Resend environment variables from `src/env.js`, and cleaned dead imports and variables across admin modules.
 
 ## Open Concerns & Areas for Care
 
