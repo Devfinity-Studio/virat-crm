@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { db } from "../index";
-import { users } from "./users";
+import { db } from "@/server/db";
+import { users } from "@/server/db/schema/users";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -10,7 +10,7 @@ async function setPassword() {
 
   if (!employeeCode || !plainPassword) {
     console.log(
-      "Usage: npx tsx src/server/db/schema/set-password.ts <employeeCode> <password>",
+      "Usage: npx tsx scripts/set-password.ts <employeeCode> <password>",
     );
     process.exit(1);
   }
