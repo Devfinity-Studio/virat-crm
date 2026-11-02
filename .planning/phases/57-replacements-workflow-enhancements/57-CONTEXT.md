@@ -24,3 +24,4 @@ Field workforce users and managers processing product replacements require accur
 - Update `src/server/db/schema/replacements.ts` to include `aoId: uuid("ao_id").references(() => users.id)` on the `replacements` table.
 - Update `replacementsRelations` to link `ao: one(users, { fields: [replacements.aoId], references: [users.id] })`.
 - Ensure migrations are prepared and synced to both dev and prod databases.
+
