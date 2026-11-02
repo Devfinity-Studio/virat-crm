@@ -42,3 +42,6 @@
   - Goal: Remove unnecessary files, folders, and dead scratch directories; eliminate unused libraries and redundant npm packages; prune dead environment variables; and clean unused imports and dead code references across the repository.
   - Requirements: CLEAN-01, CLEAN-02, CLEAN-03, CLEAN-04
 
+- **Phase 57: Replacements Workflow Enhancements (AO Selection & Invoice Item Selection)**
+  - Goal: Add Agricultural Officer (AO) search-by-name/ecode assignment, automatically fetch items from the original sales invoice, and enable itemized/partial product replacement selection.
+  - Requirements: REP-AO-01, REP-INV-01, REP-ITEM-01
