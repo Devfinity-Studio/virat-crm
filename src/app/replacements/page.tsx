@@ -320,38 +320,7 @@ export default function ReplacementsDashboard() {
                     </div>
                   </div>
 
-                  {req.status === "Pending" && (
-                    <div className="mt-4 flex gap-2 border-t border-slate-200 pt-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-medium h-9"
-                        onClick={() =>
-                          updateStatus({
-                            replacementId: req.id,
-                            status: "Approved",
-                          })
-                        }
-                        disabled={isUpdating}
-                      >
-                        <Check className="mr-1 h-3.5 w-3.5" /> Approve
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-red-300 bg-red-50 text-red-700 hover:bg-red-100 font-medium h-9"
-                        onClick={() =>
-                          updateStatus({
-                            replacementId: req.id,
-                            status: "Rejected",
-                          })
-                        }
-                        disabled={isUpdating}
-                      >
-                        <X className="mr-1 h-3.5 w-3.5" /> Reject
-                      </Button>
-                    </div>
-                  )}
+
                 </CardContent>
               </Card>
             ))}

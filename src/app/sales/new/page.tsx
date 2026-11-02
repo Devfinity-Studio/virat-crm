@@ -16,6 +16,8 @@ import {
   Plus,
   Trash2,
   PackagePlus,
+  AlertCircle,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -85,6 +87,41 @@ export default function NewSale() {
     if (nextInvoiceId && !transactionNumber) setTransactionNumber(nextInvoiceId);
   }, [nextInvoiceId, transactionNumber]);
 
+  const [debouncedTxnNumber, setDebouncedTxnNumber] = useState(transactionNumber);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedTxnNumber(transactionNumber.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [transactionNumber]);
+
+  const { data: duplicateCheck, isLoading: isCheckingDuplicate } =
+    api.sales.checkInvoiceNumber.useQuery(
+      { invoiceNumber: debouncedTxnNumber },
+      { enabled: !!debouncedTxnNumber },
+    );
+
+  const handleInvDateChange = (val: string) => {
+    setInvDate(val);
+    if (val) {
+      const parts = val.split("-");
+      if (parts.length === 3) {
+        const d = new Date(
+          parseInt(parts[0]!, 10),
+          parseInt(parts[1]!, 10) - 1,
+          parseInt(parts[2]!, 10),
+        );
+        if (!isNaN(d.getTime())) {
+          const formatted = d
+            .toLocaleString("en-US", { month: "short", year: "numeric" })
+            .replace(" ", "-");
+          setDocMonth(formatted);
+        }
+      }
+    }
+  };
+
   const { data: customers = [] } = api.crm.getBranchCustomers.useQuery();
 
   const {
@@ -153,6 +190,13 @@ export default function NewSale() {
         ? `${u.employeeCode} - ${u.firstName} ${u.lastName || ""}`
         : `${u.firstName} ${u.lastName || ""}`,
     }));
+
+  const fieldSupportOptions = orgUsers.map((u) => ({
+    id: u.id,
+    label: u.employeeCode
+      ? `${u.employeeCode} - ${u.firstName} ${u.lastName || ""}`
+      : `${u.firstName} ${u.lastName || ""}`,
+  }));
 
   // Populate customer fields on change
   useEffect(() => {
@@ -278,6 +322,11 @@ export default function NewSale() {
 
     if (!orderNumber?.trim()) {
       toast.error("Order No is required");
+      return;
+    }
+
+    if (duplicateCheck?.exists) {
+      toast.error(`Invoice number "${transactionNumber}" already exists! Please choose a unique invoice number.`);
       return;
     }
 
@@ -658,11 +707,52 @@ export default function NewSale() {
                 </div>
                 {/* Tax Inv No */}
                 <div className="space-y-1">
-                  <Label>Tax Inv No</Label>
-                  <Input
-                    value={transactionNumber}
-                    onChange={(e) => setTransactionNumber(e.target.value)}
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="tax-inv-no">Tax Inv No</Label>
+                    {isCheckingDuplicate && (
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1 font-normal">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Checking...
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="tax-inv-no"
+                      value={transactionNumber}
+                      onChange={(e) => setTransactionNumber(e.target.value)}
+                      placeholder="e.g. INV-00001"
+                      className={cn(
+                        duplicateCheck?.exists &&
+                          "border-red-500 focus-visible:ring-red-500/20 pr-9 text-red-900 bg-red-50/40",
+                        !duplicateCheck?.exists &&
+                          debouncedTxnNumber &&
+                          !isCheckingDuplicate &&
+                          "border-emerald-500 focus-visible:ring-emerald-500/20 pr-9",
+                      )}
+                    />
+                    {duplicateCheck?.exists && (
+                      <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                    )}
+                    {!duplicateCheck?.exists &&
+                      debouncedTxnNumber &&
+                      !isCheckingDuplicate && (
+                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />
+                      )}
+                  </div>
+                  {duplicateCheck?.exists && (
+                    <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      Invoice &quot;{transactionNumber}&quot; already exists!
+                    </p>
+                  )}
+                  {!duplicateCheck?.exists &&
+                    debouncedTxnNumber &&
+                    !isCheckingDuplicate && (
+                      <p className="text-xs font-medium text-emerald-600 flex items-center gap-1 mt-1">
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                        Invoice number available
+                      </p>
+                    )}
                 </div>
                 {/* Inv Date */}
                 <div className="space-y-1">
@@ -670,7 +760,7 @@ export default function NewSale() {
                   <Input
                     type="date"
                     value={invDate}
-                    onChange={(e) => setInvDate(e.target.value)}
+                    onChange={(e) => handleInvDateChange(e.target.value)}
                   />
                 </div>
                 {/* DocMonth */}
@@ -709,12 +799,12 @@ export default function NewSale() {
                 </div>
                 {/* Field Support */}
                 <div className="space-y-1 lg:col-span-2">
-                  <Label>Field SupP By</Label>
+                  <Label>Field Support By</Label>
                   <MultiSelectInput
-                    options={managerOptions}
+                    options={fieldSupportOptions}
                     selectedIds={managerIds}
                     onChange={setManagerIds}
-                    placeholder="Select Field Support..."
+                    placeholder="Search employee by code or name for Field Support..."
                   />
                 </div>
               </CardContent>

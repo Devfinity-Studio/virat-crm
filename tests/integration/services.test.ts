@@ -48,10 +48,10 @@ describe("Sales Service Calculations (DEBT-03)", () => {
   });
 
   it("should generate next sequential invoice ID correctly", () => {
-    expect(generateNextInvoiceId(null)).toBe("INV-1000");
-    expect(generateNextInvoiceId("")).toBe("INV-1000");
-    expect(generateNextInvoiceId("INV-1000")).toBe("INV-1001");
-    expect(generateNextInvoiceId("INV-1049")).toBe("INV-1050");
+    expect(generateNextInvoiceId(null)).toBe("INV-00001");
+    expect(generateNextInvoiceId("")).toBe("INV-00001");
+    expect(generateNextInvoiceId("INV-00001")).toBe("INV-00002");
+    expect(generateNextInvoiceId("INV-00049")).toBe("INV-00050");
     expect(generateNextInvoiceId("TAX-99")).toBe("TAX-100");
   });
 });
