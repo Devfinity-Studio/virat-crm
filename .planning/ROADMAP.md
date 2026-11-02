@@ -49,3 +49,7 @@
 - **Phase 58: UI and UX Redesign [COMPLETED]**
   - Goal: Completely overhaul the mobile-first UI/UX for non-tech-savvy field employees and admins using Stitch MCP designs in strict light mode with thumb-zone touch targets (52px+), fixed bottom navigation, plain language, and zero technical jargon.
   - Requirements: UI-STITCH-01, UI-LIGHT-01, UI-MOBILE-01, UI-NAV-01, UI-STATUS-01, UI-ADMIN-01
+
+- **Phase 59: Product Management & In-Sale Quick-Add**
+  - Goal: Create a dedicated products catalog management page to view, search, and add products, and integrate an in-sale quick-add product modal on the new sales page with instant auto-selection.
+  - Requirements: PROD-CAT-01, PROD-QUICK-01, PROD-API-01, PROD-RBAC-01
