@@ -42,6 +42,10 @@
   - Goal: Remove unnecessary files, folders, and dead scratch directories; eliminate unused libraries and redundant npm packages; prune dead environment variables; and clean unused imports and dead code references across the repository.
   - Requirements: CLEAN-01, CLEAN-02, CLEAN-03, CLEAN-04
 
-- **Phase 57: Replacements Workflow Enhancements (AO Selection & Invoice Item Selection)**
+- **Phase 57: Replacements Workflow Enhancements (AO Selection & Invoice Item Selection) [COMPLETED]**
   - Goal: Add Agricultural Officer (AO) search-by-name/ecode assignment, automatically fetch items from the original sales invoice, and enable itemized/partial product replacement selection.
   - Requirements: REP-AO-01, REP-INV-01, REP-ITEM-01
+
+- **Phase 58: UI and UX Redesign**
+  - Goal: Completely overhaul the mobile-first UI/UX for non-tech-savvy field employees and admins using Stitch MCP designs in strict light mode with thumb-zone touch targets (52px+), fixed bottom navigation, plain language, and zero technical jargon.
+  - Requirements: UI-STITCH-01, UI-LIGHT-01, UI-MOBILE-01, UI-NAV-01, UI-STATUS-01, UI-ADMIN-01
