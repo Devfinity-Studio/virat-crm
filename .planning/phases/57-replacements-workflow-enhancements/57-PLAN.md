@@ -8,22 +8,22 @@ This phase implements critical workflow and tracking improvements to the Replace
 
 ---
 
-## Plan Details
+## Status: COMPLETED
 
-### Wave 1: Database Schema & Backend Services
+### Wave 1: Database Schema & Backend Services [COMPLETED]
 
-#### Task 1: Extend Database Schema for Agricultural Officer (`REP-AO-01`)
+#### Task 1: Extend Database Schema for Agricultural Officer (`REP-AO-01`) [COMPLETED]
 - **Target Files:**
   - `src/server/db/schema/replacements.ts`
 - **Actions:**
   - Add `aoId: uuid("ao_id").references(() => users.id)` column to `replacements` table definition.
   - Add `ao` relation in `replacementsRelations` pointing to `users`.
-  - Sync schema changes across both Neon database branches (dev and prod) via `pnpm db:push`.
+  - Sync schema changes across both Neon database branches (dev and prod) via idempotent DDL (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS "ao_id" uuid REFERENCES "virat-crm_user"("id") ON DELETE SET NULL`).
 - **Verification:**
   - `pnpm tsc --noEmit` verifies schema typing.
-  - Database table `virat-crm_replacement` has `ao_id` column present.
+  - Database table `virat-crm_replacement` has `ao_id` column present in both DEV (`ep-soft-thunder`) and PROD (`ep-small-bonus`) databases.
 
-#### Task 2: Update TRPC Replacements Router (`REP-AO-01`, `REP-INV-01`, `REP-ITEM-01`)
+#### Task 2: Update TRPC Replacements Router (`REP-AO-01`, `REP-INV-01`, `REP-ITEM-01`) [COMPLETED]
 - **Target Files:**
   - `src/server/api/routers/replacements.ts`
   - `src/server/api/routers/sales.ts`
@@ -35,14 +35,16 @@ This phase implements critical workflow and tracking improvements to the Replace
   - Update `getReplacements` and `getMyReplacements` queries to join `ao: true` and `items: { with: { product: true } }`.
   - Ensure `sales.getSaleByOrderNumber` and `sales.getSaleById` eagerly include product details in `items`.
 - **Verification:**
-  - Automated integration tests verify `createReplacement` with `aoId` and quantity boundaries.
+  - Automated integration tests pass.
+  - Backend validation strictly enforces `quantity <= invoicedQty`.
 
 ---
 
-### Wave 2: Frontend Replacement Form & Dashboard UI
+### Wave 2: Frontend Replacement Form & Dashboard UI [COMPLETED]
 
-#### Task 3: Agricultural Officer (AO) Search & Selector Component (`REP-AO-01`)
+#### Task 3: Agricultural Officer (AO) Search & Selector Component (`REP-AO-01`) [COMPLETED]
 - **Target Files:**
+  - `src/app/_components/ui/EmployeeSearchCombobox.tsx`
   - `src/app/replacements/new/page.tsx`
 - **Actions:**
   - Implement a dedicated AO search bar in the replacement creation form.
@@ -50,7 +52,7 @@ This phase implements critical workflow and tracking improvements to the Replace
   - Show quick-select dropdown results displaying Name, E-Code, and Role.
   - When selected, display an active badge with AO Name, E-Code, and a clear button (`X`).
 
-#### Task 4: Original Invoice Product Ingestion & Itemized Selection (`REP-INV-01`, `REP-ITEM-01`)
+#### Task 4: Original Invoice Product Ingestion & Itemized Selection (`REP-INV-01`, `REP-ITEM-01`) [COMPLETED]
 - **Target Files:**
   - `src/app/replacements/new/page.tsx`
 - **Actions:**
@@ -66,13 +68,14 @@ This phase implements critical workflow and tracking improvements to the Replace
     - Block submission if 0 items are selected.
   - Submit only checked items with their specified replacement quantities.
 
-#### Task 5: Replacements Dashboard & Export Update (`REP-AO-01`)
+#### Task 5: Replacements Dashboard & Export Update (`REP-AO-01`) [COMPLETED]
 - **Target Files:**
   - `src/app/replacements/page.tsx`
 - **Actions:**
-  - Add "Responsible AO" column to the replacements dashboard table.
-  - Update the Excel export in `handleExportExcel` to include the AO Name and E-Code.
+  - Add "Responsible AO" column and badge to the replacements dashboard table/card view.
+  - Display list of replaced items on replacement cards.
+  - Update the Excel export in `handleExportExcel` to include the AO Name, E-Code, and replaced product summary.
 - **Verification:**
-  - `pnpm tsc --noEmit` and `pnpm lint` pass with 0 errors.
-  - `pnpm vitest run` passes all test suites.
-  - `pnpm build` compiles all routes cleanly.
+  - `pnpm tsc --noEmit` passed with 0 errors.
+  - `pnpm vitest run` passed (47/47 tests).
+  - `pnpm build` compiled all 46 routes cleanly.

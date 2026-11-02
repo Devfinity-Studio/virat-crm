@@ -53,7 +53,25 @@ export const salesRouter = createTRPCRouter({
       const sale = await ctx.db.query.sales.findFirst({
         where: eq(sales.orderNumber, input.orderNumber),
         with: {
-          items: true,
+          items: {
+            with: { product: true },
+          },
+          assignments: true,
+          customer: true,
+        },
+      });
+      return sale;
+    }),
+
+  getSaleById: featureProtectedProcedure("sales")
+    .input(z.object({ saleId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const sale = await ctx.db.query.sales.findFirst({
+        where: eq(sales.id, input.saleId),
+        with: {
+          items: {
+            with: { product: true },
+          },
           assignments: true,
           customer: true,
         },

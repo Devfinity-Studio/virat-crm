@@ -28,6 +28,8 @@ export const replacements = createTable("replacement", {
   userId: uuid("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
+  aoId: uuid("ao_id")
+    .references(() => users.id, { onDelete: "set null" }),
   reason: text("reason").notNull(),
   status: varchar("status", { length: 50 }).default("Pending").notNull(),
   replacementType: varchar("replacement_type", { length: 50 }).notNull().default("First Replacement"),
@@ -59,6 +61,10 @@ export const replacementsRelations = relations(
     }),
     user: one(users, {
       fields: [replacements.userId],
+      references: [users.id],
+    }),
+    ao: one(users, {
+      fields: [replacements.aoId],
       references: [users.id],
     }),
     branch: one(branches, {
