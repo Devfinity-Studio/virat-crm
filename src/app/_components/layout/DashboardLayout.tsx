@@ -61,6 +61,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </>
     );
     if (path.startsWith("/sales")) return "Sales Register";
+    if (path.startsWith("/products")) return "Product Master";
     if (path.startsWith("/inventory")) return "Inventory & Stock";
     if (path.startsWith("/crm")) return "Customer Master";
     if (path.startsWith("/reports")) return "Daily Activity Reports";

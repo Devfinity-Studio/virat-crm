@@ -22,6 +22,7 @@ import {
   PanelLeftOpen,
   ChevronDown,
   ChevronUp,
+  Package,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -99,6 +100,12 @@ export function DesktopSidebar({ isMobile = false }: { isMobile?: boolean }) {
           label: "Inventory",
           icon: FileText,
           hidden: !getIsFeatureEnabled("inventory"),
+        },
+        {
+          href: "/products",
+          label: "Products Master",
+          icon: Package,
+          hidden: !getIsFeatureEnabled("sales") && !getIsFeatureEnabled("inventory"),
         },
         {
           href: "/reports",

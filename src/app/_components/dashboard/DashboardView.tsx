@@ -22,7 +22,8 @@ import {
   CheckCircle2,
   Navigation,
   Clock,
-  Radio
+  Radio,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -94,6 +95,13 @@ export function DashboardView({
       icon: ShoppingBag,
       hidden: !getIsFeatureEnabled("sales"),
       iconBg: "bg-blue-600",
+    },
+    {
+      href: "/products",
+      label: "Products",
+      icon: Package,
+      hidden: !getIsFeatureEnabled("sales") && !getIsFeatureEnabled("inventory"),
+      iconBg: "bg-sky-600",
     },
     {
       href: "/inventory",

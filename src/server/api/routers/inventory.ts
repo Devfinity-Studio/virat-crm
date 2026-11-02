@@ -85,17 +85,27 @@ export const inventoryRouter = createTRPCRouter({
           name: z.string(),
           sku: z.string(),
           price: z.string(),
+          brand: z.string().nullable().optional(),
+          category: z.string().nullable().optional(),
+          hsnCode: z.string().nullable().optional(),
+          minThreshold: z.number().nullable().optional(),
           pointsPerQty: z.string().nullable().optional(),
         }),
       ),
     )
     .query(async ({ ctx }) => {
-      const items = await ctx.db.query.products.findMany();
+      const items = await ctx.db.query.products.findMany({
+        orderBy: (products, { desc }) => [desc(products.id)],
+      });
       return items.map((item) => ({
         id: item.id,
         name: item.name,
         sku: item.sku,
         price: item.price.toString(),
+        brand: item.brand,
+        category: item.category,
+        hsnCode: item.hsnCode,
+        minThreshold: item.minThreshold,
         pointsPerQty: item.pointsPerQty?.toString(),
       }));
     }),
@@ -350,12 +360,57 @@ export const inventoryRouter = createTRPCRouter({
     },
   ),
 
-  addProduct: featureProtectedProcedure("inventory")
+  addProduct: protectedProcedure
     .input(
       z.object({
-        name: z.string().min(1),
+        name: z.string().min(1, "Product name is required"),
         sku: z.string().optional(),
-        price: z.number().min(0),
+        price: z.number().min(0, "Price must be positive"),
+        category: z.string().optional(),
+        brand: z.string().optional(),
+        hsnCode: z.string().optional(),
+        minThreshold: z.number().min(0).optional(),
+        pointsPerQty: z.number().min(0).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const generatedSku =
+        input.sku?.trim() ||
+        `PRD-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+
+      const [newProduct] = await ctx.db
+        .insert(products)
+        .values({
+          name: input.name.trim(),
+          sku: generatedSku,
+          price: input.price.toString(),
+          category: input.category?.trim() || null,
+          brand: input.brand?.trim() || null,
+          hsnCode: input.hsnCode?.trim() || null,
+          minThreshold: input.minThreshold ?? 10,
+          pointsPerQty: input.pointsPerQty
+            ? input.pointsPerQty.toString()
+            : "0",
+        })
+        .returning();
+
+      if (!newProduct) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create product",
+        });
+      }
+
+      return newProduct;
+    }),
+
+  updateProduct: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        sku: z.string().optional(),
+        price: z.number().min(0).optional(),
         category: z.string().optional(),
         brand: z.string().optional(),
         hsnCode: z.string().optional(),
@@ -365,28 +420,42 @@ export const inventoryRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { dbUser } = ctx;
-      const isAdmin = dbUser.role === "Admin" || dbUser.role === "Developer";
-      if (!isAdmin) {
+      const isAuthorized =
+        dbUser.role === "Admin" ||
+        dbUser.role === "Developer" ||
+        dbUser.role === "Manager";
+      if (!isAuthorized) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Only Admins can add products",
+          message: "Only Managers and Admins can update products",
         });
       }
 
-      const [newProduct] = await ctx.db
-        .insert(products)
-        .values({
-          name: input.name,
-          sku: input.sku || `PRD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          price: input.price.toString(),
-          category: input.category,
-          brand: input.brand,
-          hsnCode: input.hsnCode,
-          minThreshold: input.minThreshold ?? 10,
-          pointsPerQty: input.pointsPerQty ? input.pointsPerQty.toString() : "0",
-        })
+      const { id, ...data } = input;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateValues: Record<string, any> = {};
+      if (data.name !== undefined) updateValues.name = data.name.trim();
+      if (data.sku !== undefined) updateValues.sku = data.sku.trim();
+      if (data.price !== undefined) updateValues.price = data.price.toString();
+      if (data.category !== undefined) updateValues.category = data.category.trim();
+      if (data.brand !== undefined) updateValues.brand = data.brand.trim();
+      if (data.hsnCode !== undefined) updateValues.hsnCode = data.hsnCode.trim();
+      if (data.minThreshold !== undefined) updateValues.minThreshold = data.minThreshold;
+      if (data.pointsPerQty !== undefined) updateValues.pointsPerQty = data.pointsPerQty.toString();
+
+      const [updated] = await ctx.db
+        .update(products)
+        .set(updateValues)
+        .where(eq(products.id, id))
         .returning();
 
-      return newProduct;
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product not found",
+        });
+      }
+
+      return updated;
     }),
 });
