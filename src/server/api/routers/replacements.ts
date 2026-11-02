@@ -12,15 +12,19 @@ export const replacementsRouter = createTRPCRouter({
         originalSaleId: z.number(),
         reason: z.string(),
         replacementType: z.string(),
+        aoId: z.string().uuid().optional().nullable(),
         items: z.array(z.object({
           productId: z.number(),
-          quantity: z.number()
-        }))
+          quantity: z.number().min(1)
+        })).min(1, "Please select at least one product to replace")
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const originalSale = await ctx.db.query.sales.findFirst({
         where: eq(sales.id, input.originalSaleId),
+        with: {
+          items: true,
+        },
       });
 
       if (!originalSale)
@@ -52,10 +56,24 @@ export const replacementsRouter = createTRPCRouter({
         }
       }
 
+      // Validate replacement items against original sale if items were tracked
+      if (originalSale.items && originalSale.items.length > 0) {
+        for (const item of input.items) {
+          const saleItem = originalSale.items.find((si) => si.productId === item.productId);
+          if (saleItem && item.quantity > saleItem.quantity) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Replacement quantity (${item.quantity}) cannot exceed original invoiced quantity (${saleItem.quantity})`,
+            });
+          }
+        }
+      }
+
       const newReplacement = {
         originalSaleId: input.originalSaleId,
         branchId: originalSale.branchId,
         userId: ctx.dbUser.id,
+        aoId: input.aoId ?? null,
         reason: input.reason,
         status: "Pending" as const,
         replacementType: input.replacementType,
@@ -89,6 +107,11 @@ export const replacementsRouter = createTRPCRouter({
         where: eq(replacements.userId, ctx.dbUser.id),
         with: {
           sale: true,
+          user: true,
+          ao: true,
+          items: {
+            with: { product: true },
+          },
           files: {
             where: (files, { eq }) => eq(files.entityType, "replacement"),
           },
@@ -104,6 +127,10 @@ export const replacementsRouter = createTRPCRouter({
         with: {
           sale: true,
           user: true,
+          ao: true,
+          items: {
+            with: { product: true },
+          },
           files: {
             where: (files, { eq }) => eq(files.entityType, "replacement"),
           },
@@ -118,6 +145,10 @@ export const replacementsRouter = createTRPCRouter({
       with: {
         sale: true,
         user: true,
+        ao: true,
+        items: {
+          with: { product: true },
+        },
         files: {
           where: (files, { eq }) => eq(files.entityType, "replacement"),
         },
