@@ -43,6 +43,26 @@ export default function NewAdvance() {
     setDocMonth(new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' }).replace(' ', '-'));
   }, []);
 
+  const handleInvDateChange = (val: string) => {
+    setInvDate(val);
+    if (val) {
+      const parts = val.split("-");
+      if (parts.length === 3) {
+        const d = new Date(
+          parseInt(parts[0]!, 10),
+          parseInt(parts[1]!, 10) - 1,
+          parseInt(parts[2]!, 10),
+        );
+        if (!isNaN(d.getTime())) {
+          const formatted = d
+            .toLocaleString("en-US", { month: "short", year: "numeric" })
+            .replace(" ", "-");
+          setDocMonth(formatted);
+        }
+      }
+    }
+  };
+
   const [userIds, setUserIds] = useState<string[]>([]);
   const [managerIds, setManagerIds] = useState<string[]>([]);
   const [saleType, setSaleType] = useState("Direct to Customer from PU"); // Radio button
@@ -436,7 +456,7 @@ export default function NewAdvance() {
       {/* Inv Date */}
       <div className="space-y-1">
         <Label>Inv Date</Label>
-        <Input type="date" value={invDate} onChange={e=>setInvDate(e.target.value)} />
+        <Input type="date" value={invDate} onChange={e=>handleInvDateChange(e.target.value)} />
       </div>
       {/* DocMonth */}
       <div className="space-y-1">
@@ -460,8 +480,8 @@ export default function NewAdvance() {
       </div>
       {/* Field Support */}
       <div className="space-y-1 lg:col-span-2">
-        <Label>Field SupP By</Label>
-        <MultiSelectInput options={managerOptions} selectedIds={managerIds} onChange={setManagerIds} placeholder="Select Field Support..." />
+        <Label>Field Support By</Label>
+        <MultiSelectInput options={allUsersOptions} selectedIds={managerIds} onChange={setManagerIds} placeholder="Search employee by code or name for Field Support..." />
       </div>
     </CardContent>
   </Card>

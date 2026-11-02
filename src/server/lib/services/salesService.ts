@@ -58,22 +58,33 @@ export function calculateSaleBalance(input: SaleBalanceInput): string {
 
 /**
  * Generates the next sequential invoice/transaction ID.
+ * Defaults to "INV-00001" if no prior invoice exists.
  */
 export function generateNextInvoiceId(
   lastTransactionNumber?: string | null,
 ): string {
-  if (!lastTransactionNumber) {
-    return "INV-1000";
+  if (!lastTransactionNumber || !lastTransactionNumber.trim()) {
+    return "INV-00001";
   }
 
-  const match = lastTransactionNumber.match(/(\d+)$/);
-  if (match && match[1]) {
-    const num = parseInt(match[1], 10);
-    const prefix = lastTransactionNumber.slice(0, match.index);
-    return `${prefix}${num + 1}`;
+  const trimmed = lastTransactionNumber.trim();
+  const match = trimmed.match(/^(.*?)(\d+)$/);
+  if (match && match[1] !== undefined && match[2] !== undefined) {
+    const prefix = match[1];
+    const numDigits = match[2];
+    const num = parseInt(numDigits, 10);
+    const nextNum = num + 1;
+
+    // Preserve zero-padding or enforce min 5 digits for INV- prefix
+    const padLength =
+      prefix.toUpperCase().startsWith("INV") || numDigits.startsWith("0")
+        ? Math.max(5, numDigits.length)
+        : numDigits.length;
+
+    return `${prefix}${String(nextNum).padStart(padLength, "0")}`;
   }
 
-  return `${lastTransactionNumber}-1`;
+  return `${trimmed}-00001`;
 }
 
 /**

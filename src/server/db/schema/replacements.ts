@@ -31,7 +31,7 @@ export const replacements = createTable("replacement", {
   aoId: uuid("ao_id")
     .references(() => users.id, { onDelete: "set null" }),
   reason: text("reason").notNull(),
-  status: varchar("status", { length: 50 }).default("Pending").notNull(),
+  status: varchar("status", { length: 50 }).default("Approved").notNull(),
   replacementType: varchar("replacement_type", { length: 50 }).notNull().default("First Replacement"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

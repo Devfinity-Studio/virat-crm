@@ -28,6 +28,16 @@ import {
 export const salesRouter = createTRPCRouter({
   getNextInvoiceId: featureProtectedProcedure("sales").query(
     async ({ ctx }) => {
+      // Find latest sale with INV- format first, else any transactionNumber
+      const lastInvSale = await ctx.db.query.sales.findFirst({
+        where: sql`LOWER(${sales.transactionNumber}) LIKE 'inv-%'`,
+        orderBy: [desc(sales.id)],
+      });
+
+      if (lastInvSale?.transactionNumber) {
+        return generateNextInvoiceId(lastInvSale.transactionNumber);
+      }
+
       const lastSale = await ctx.db.query.sales.findFirst({
         where: sql`${sales.transactionNumber} IS NOT NULL`,
         orderBy: [desc(sales.id)],
@@ -36,6 +46,37 @@ export const salesRouter = createTRPCRouter({
       return generateNextInvoiceId(lastSale?.transactionNumber);
     },
   ),
+
+  checkInvoiceNumber: featureProtectedProcedure("sales")
+    .input(
+      z.object({
+        invoiceNumber: z.string(),
+        excludeSaleId: z.number().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const trimmed = input.invoiceNumber.trim();
+      if (!trimmed) {
+        return { exists: false };
+      }
+
+      const existing = await ctx.db.query.sales.findFirst({
+        where: input.excludeSaleId
+          ? and(
+              sql`LOWER(${sales.transactionNumber}) = LOWER(${trimmed})`,
+              sql`${sales.id} != ${input.excludeSaleId}`,
+            )
+          : sql`LOWER(${sales.transactionNumber}) = LOWER(${trimmed})`,
+        columns: { id: true, orderNumber: true, customerName: true },
+      });
+
+      return {
+        exists: !!existing,
+        saleId: existing?.id,
+        orderNumber: existing?.orderNumber,
+        customerName: existing?.customerName,
+      };
+    }),
 
   checkOrderNumber: featureProtectedProcedure("sales")
     .input(z.object({ orderNumber: z.string() }))

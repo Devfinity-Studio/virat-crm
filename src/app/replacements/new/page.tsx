@@ -631,10 +631,10 @@ function ReplacementFormContent() {
                 <div className="space-y-1 lg:col-span-2">
                   <Label className="text-xs font-medium text-slate-600">Field Support By</Label>
                   <MultiSelectInput
-                    options={managerOptions}
+                    options={allUsersOptions}
                     selectedIds={managerIds}
                     onChange={setManagerIds}
-                    placeholder="Select Field Support..."
+                    placeholder="Search employee by code or name for Field Support..."
                   />
                 </div>
               </CardContent>

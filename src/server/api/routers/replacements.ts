@@ -75,7 +75,7 @@ export const replacementsRouter = createTRPCRouter({
         userId: ctx.dbUser.id,
         aoId: input.aoId ?? null,
         reason: input.reason,
-        status: "Pending" as const,
+        status: "Approved" as const,
         replacementType: input.replacementType,
       };
 
