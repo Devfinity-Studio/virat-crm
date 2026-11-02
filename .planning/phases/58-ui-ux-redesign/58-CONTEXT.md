@@ -42,3 +42,4 @@ Overhaul the entire UI/UX of the application for mobile-first outdoor field empl
 - Interactive Light-Mode map with bottom-sheet drawer on mobile / split view on desktop.
 - High-contrast route line with numbered time pins and timeline scrubber.
 - Admin Alert Center for instant notifications when location is disabled or users locked out.
+
