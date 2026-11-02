@@ -34,3 +34,4 @@ Enable businesses and field agents to manage products smoothly without workflow 
   - Update `addProduct`: Allow creation by users with `sales` or `inventory` feature access (Admins, Managers, and authorized staff).
   - Add `updateProduct` if needed for editing existing product details.
   - Validate uniqueness of SKU and positive pricing.
+
