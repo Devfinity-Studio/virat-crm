@@ -33,8 +33,8 @@ export function LocationTrackerProvider({
 
   const handlePositionUpdate = useCallback(
     (pos: LocationCoordinates) => {
-      // Sync heartbeat to server tracking status
-      if (user?.role === "Employee") {
+      // Sync position to server tracking status for any authenticated active user
+      if (user?.isActive) {
         updateStatusMutation.mutate({
           locationPermissionStatus: "ALWAYS",
           isOnline: true,
@@ -43,33 +43,41 @@ export function LocationTrackerProvider({
         });
       }
     },
-    [user?.role, updateStatusMutation],
+    [user?.isActive, updateStatusMutation],
   );
 
   useEffect(() => {
-    // Check local lockout state on mount
-    if (isLockedOut()) {
+    // Check local lockout state on mount (only applies to field Employee role)
+    if (isLockedOut() && user?.role === "Employee") {
       setLockedOutState(true);
       setLockoutMsg(getLockoutReason());
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
-    if (!user || user.role !== "Employee") return;
+    if (!user || !user.isActive) return;
 
     // A valid authenticated session clears any stale local lockout flag
-    if (user.isActive) {
+    if (user.role !== "Employee" || user.isActive) {
       setLockedOutState(false);
       unlockSession();
     }
 
-    // Check permission flow on login for Employee
+    // Check permission flow on login
     const initEngine = async () => {
       const perm = await locationEngine.checkPermission();
       setPermissionState(perm);
 
       if (perm !== "GRANTED") {
-        setShowPermissionModal(true);
+        if (user.role === "Employee") {
+          setShowPermissionModal(true);
+        } else {
+          // For non-employees (e.g. Admins/Managers), request permission non-intrusively
+          const granted = await locationEngine.requestPermission();
+          if (granted) {
+            await locationEngine.startTracking();
+          }
+        }
       } else {
         await locationEngine.startTracking();
       }
@@ -82,7 +90,7 @@ export function LocationTrackerProvider({
         if (state === "GRANTED") {
           setShowPermissionModal(false);
           void locationEngine.startTracking();
-        } else {
+        } else if (user.role === "Employee") {
           setShowPermissionModal(true);
         }
       },
@@ -90,8 +98,10 @@ export function LocationTrackerProvider({
         setIsOffline(offline);
       },
       onLockout: (reason) => {
-        setLockedOutState(true);
-        setLockoutMsg(reason);
+        if (user.role === "Employee") {
+          setLockedOutState(true);
+          setLockoutMsg(reason);
+        }
       },
     });
 
@@ -108,7 +118,7 @@ export function LocationTrackerProvider({
     await locationEngine.startTracking();
   };
 
-  if (lockedOut) {
+  if (lockedOut && user?.role === "Employee") {
     return <LockoutScreen reason={lockoutMsg} />;
   }
 
@@ -123,4 +133,3 @@ export function LocationTrackerProvider({
     </>
   );
 }
-

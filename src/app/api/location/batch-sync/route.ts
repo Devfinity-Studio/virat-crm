@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession, getSessionFromHeaders } from "@/server/lib/auth";
 import { db } from "@/server/db";
-import { employeeLocations, employeeTrackingStatus } from "@/server/db/schema";
+import { employeeLocations, employeeTrackingStatus, users } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +98,17 @@ export async function POST(request: NextRequest) {
         },
       });
 
+    // Keep user's canonical location & active state up-to-date
+    await db
+      .update(users)
+      .set({
+        lastActiveAt: new Date(),
+        lastLat: latest.latitude.toString(),
+        lastLng: latest.longitude.toString(),
+        connectivityStatus: "Online",
+      })
+      .where(eq(users.id, employeeId));
+
     return NextResponse.json({ success: true, count: rows.length });
   } catch (error) {
     console.error("Batch Sync Error:", error);
@@ -106,4 +118,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

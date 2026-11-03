@@ -136,20 +136,28 @@ export default function LiveTeamMap() {
     return routeData.checkpoints.find((cp) => cp.id === selectedCheckpointId) ?? null;
   }, [selectedCheckpointId, routeData]);
 
-  // Create pulsing directional marker icon
-  const createPulseIcon = (color: string) => {
+  // Create pulsing directional marker icon with employee initials and name
+  const createPulseIcon = (emp: (typeof teamLocations)[0], color: string) => {
     if (!L) return undefined;
+    const initials = `${emp.firstName.charAt(0)}${emp.lastName ? emp.lastName.charAt(0) : ""}`.toUpperCase();
     return L.divIcon({
-      className: "custom-pulse-marker",
+      className: "!bg-transparent !border-0",
       html: `
-        <div style="position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
-          <div style="position: absolute; width: 26px; height: 26px; border-radius: 50%; background-color: ${color}; opacity: 0.35; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-          <div style="width: 16px; height: 16px; border-radius: 50%; background-color: ${color}; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; pointer-events: auto;">
+          <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; width: 32px; height: 32px; border-radius: 50%; background-color: ${color}; opacity: 0.35; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+            <div style="width: 26px; height: 26px; border-radius: 50%; background-color: ${color}; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: bold; overflow: hidden;">
+              ${emp.profilePhoto ? `<img src="${emp.profilePhoto}" style="width: 100%; height: 100%; object-fit: cover;" />` : initials}
+            </div>
+          </div>
+          <div style="margin-top: 2px; background: rgba(15, 23, 42, 0.88); color: #f8fafc; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9999px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">
+            ${emp.firstName}
+          </div>
         </div>
       `,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13],
-      popupAnchor: [0, -14],
+      iconSize: [60, 52],
+      iconAnchor: [30, 26],
+      popupAnchor: [0, -26],
     });
   };
 
@@ -189,6 +197,82 @@ export default function LiveTeamMap() {
     }
     return [28.6139, 77.209]; // Default center
   }, [activeCheckpoint, selectedEmployee, teamLocations]);
+
+  // Fit bounds when viewing entire workforce without specific selection
+  const teamBounds = useMemo(() => {
+    if (selectedUserId || activeCheckpoint) return null;
+    const usersWithCoords = (
+      activeFilter === "ALL" ? teamLocations : filteredEmployees
+    ).filter((e) => e.tracking.lastLatitude && e.tracking.lastLongitude);
+
+    if (usersWithCoords.length < 2) return null;
+
+    let minLat = Infinity;
+    let maxLat = -Infinity;
+    let minLng = Infinity;
+    let maxLng = -Infinity;
+
+    for (const u of usersWithCoords) {
+      const lat = u.tracking.lastLatitude!;
+      const lng = u.tracking.lastLongitude!;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    }
+
+    const latMargin = Math.max((maxLat - minLat) * 0.15, 0.005);
+    const lngMargin = Math.max((maxLng - minLng) * 0.15, 0.005);
+
+    return [
+      [minLat - latMargin, minLng - lngMargin],
+      [maxLat + latMargin, maxLng + lngMargin],
+    ] as [[number, number], [number, number]];
+  }, [teamLocations, filteredEmployees, activeFilter, selectedUserId, activeCheckpoint]);
+
+  // Prevent overlapping markers at the exact same location by arranging them radially
+  const displayedMarkers = useMemo(() => {
+    const list = (
+      activeFilter === "ALL" ? teamLocations : filteredEmployees
+    ).filter((e) => e.tracking.lastLatitude && e.tracking.lastLongitude);
+
+    const groups = new Map<string, typeof list>();
+    for (const emp of list) {
+      const key = `${emp.tracking.lastLatitude!.toFixed(4)},${emp.tracking.lastLongitude!.toFixed(4)}`;
+      const arr = groups.get(key) ?? [];
+      arr.push(emp);
+      groups.set(key, arr);
+    }
+
+    return list.map((emp) => {
+      const key = `${emp.tracking.lastLatitude!.toFixed(4)},${emp.tracking.lastLongitude!.toFixed(4)}`;
+      const group = groups.get(key)!;
+
+      if (group.length === 1) {
+        return {
+          emp,
+          position: [
+            emp.tracking.lastLatitude!,
+            emp.tracking.lastLongitude!,
+          ] as [number, number],
+        };
+      }
+
+      const index = group.indexOf(emp);
+      const angle = (2 * Math.PI * index) / group.length;
+      const offsetRadius = 0.00018; // ~18 meters radial dispersion
+      const latOffset = offsetRadius * Math.cos(angle);
+      const lngOffset = offsetRadius * Math.sin(angle);
+
+      return {
+        emp,
+        position: [
+          emp.tracking.lastLatitude! + latOffset,
+          emp.tracking.lastLongitude! + lngOffset,
+        ] as [number, number],
+      };
+    });
+  }, [teamLocations, filteredEmployees, activeFilter]);
 
   const unreadAlertsCount = alerts.filter((a) => !a.isRead).length;
 
@@ -425,16 +509,15 @@ export default function LiveTeamMap() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              <MapFlyTo center={centerCoords} />
+              <MapFlyTo
+                center={centerCoords}
+                bounds={teamBounds}
+                zoom={selectedUserId ? 16 : 14}
+              />
 
               {/* Render Team Live Positions */}
-              {teamLocations.map((emp) => {
-                if (
-                  !emp.tracking.lastLatitude ||
-                  !emp.tracking.lastLongitude ||
-                  !L
-                )
-                  return null;
+              {displayedMarkers.map(({ emp, position }) => {
+                if (!L) return null;
 
                 const pinColor =
                   emp.tracking.statusBadge === "ONLINE_TRACKING"
@@ -445,15 +528,12 @@ export default function LiveTeamMap() {
                         ? "#9333ea"
                         : "#dc2626";
 
-                const icon = createPulseIcon(pinColor);
+                const icon = createPulseIcon(emp, pinColor);
 
                 return (
                   <Marker
                     key={emp.id}
-                    position={[
-                      emp.tracking.lastLatitude,
-                      emp.tracking.lastLongitude,
-                    ]}
+                    position={position}
                     icon={icon}
                     eventHandlers={{
                       click: () => {
