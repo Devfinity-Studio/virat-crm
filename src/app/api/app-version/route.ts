@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const minVersionCode = parseInt(
-    process.env.MIN_APP_VERSION_CODE ?? "4",
+    process.env.MIN_APP_VERSION_CODE ?? "1",
     10,
   );
   const latestVersionCode = parseInt(
