@@ -8,11 +8,11 @@ export async function GET() {
     10,
   );
   const latestVersionCode = parseInt(
-    process.env.LATEST_APP_VERSION_CODE ?? "4",
+    process.env.LATEST_APP_VERSION_CODE ?? "5",
     10,
   );
   const minVersionName = process.env.MIN_APP_VERSION_NAME ?? "1.1.0";
-  const latestVersionName = process.env.LATEST_APP_VERSION_NAME ?? "1.1.0";
+  const latestVersionName = process.env.LATEST_APP_VERSION_NAME ?? "1.1.1";
   const playStoreUrl =
     process.env.PLAY_STORE_URL ??
     "https://play.google.com/store/apps/details?id=com.devfinity.viratcrm";
