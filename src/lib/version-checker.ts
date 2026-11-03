@@ -40,8 +40,8 @@ export interface VersionCheckResult {
 export const DEFAULT_VERSION_POLICY: AppVersionPolicy = {
   minVersionCode: 1,
   minVersionName: "1.1.0",
-  latestVersionCode: 4,
-  latestVersionName: "1.1.0",
+  latestVersionCode: 5,
+  latestVersionName: "1.1.1",
   forceUpdate: true,
   playStoreUrl:
     "https://play.google.com/store/apps/details?id=com.devfinity.viratcrm",
