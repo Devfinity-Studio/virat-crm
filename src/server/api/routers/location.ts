@@ -93,6 +93,17 @@ export const locationRouter = createTRPCRouter({
           },
         });
 
+      // Keep user's canonical location & active state up-to-date
+      await ctx.db
+        .update(users)
+        .set({
+          lastActiveAt: new Date(),
+          lastLat: latest.latitude.toString(),
+          lastLng: latest.longitude.toString(),
+          connectivityStatus: "Online",
+        })
+        .where(eq(users.id, employeeId));
+
       return { success: true, count: rowsToInsert.length };
     }),
 
@@ -120,6 +131,10 @@ export const locationRouter = createTRPCRouter({
         input.locationPermissionStatus === "DENIED" ||
         input.locationPermissionStatus === "DISABLED";
 
+      // Non-field staff (e.g. Admins, Developers) should not be locked out of the CRM if GPS is denied on desktop
+      const shouldLockOut =
+        isPermissionDisabled && ctx.dbUser.role === "Employee";
+
       await ctx.db
         .insert(employeeTrackingStatus)
         .values({
@@ -129,8 +144,8 @@ export const locationRouter = createTRPCRouter({
           lastUpdatedAt: new Date(),
           locationPermissionStatus: input.locationPermissionStatus,
           isOnline: input.isOnline ?? true,
-          isLockedOut: isPermissionDisabled,
-          lockoutReason: isPermissionDisabled
+          isLockedOut: shouldLockOut,
+          lockoutReason: shouldLockOut
             ? "Location permission denied or disabled"
             : null,
         })
@@ -142,14 +157,34 @@ export const locationRouter = createTRPCRouter({
             lastUpdatedAt: new Date(),
             locationPermissionStatus: input.locationPermissionStatus,
             isOnline: input.isOnline ?? undefined,
-            isLockedOut: isPermissionDisabled,
-            lockoutReason: isPermissionDisabled
+            isLockedOut: shouldLockOut,
+            lockoutReason: shouldLockOut
               ? "Location permission denied or disabled"
               : null,
           },
         });
 
-      if (isPermissionDisabled) {
+      if (input.latitude !== undefined && input.longitude !== undefined) {
+        await ctx.db
+          .update(users)
+          .set({
+            lastActiveAt: new Date(),
+            lastLat: input.latitude.toString(),
+            lastLng: input.longitude.toString(),
+            connectivityStatus: input.isOnline ? "Online" : "Offline",
+          })
+          .where(eq(users.id, employeeId));
+      } else {
+        await ctx.db
+          .update(users)
+          .set({
+            lastActiveAt: new Date(),
+            connectivityStatus: input.isOnline ? "Online" : "Offline",
+          })
+          .where(eq(users.id, employeeId));
+      }
+
+      if (shouldLockOut) {
         const title = "Location Services Disabled";
         const message = `Alert: ${ctx.dbUser.firstName} ${ctx.dbUser.lastName} (${ctx.dbUser.employeeCode}) disabled location services and was logged out.`;
 
@@ -272,9 +307,12 @@ export const locationRouter = createTRPCRouter({
    * RBAC: Strictly ADMIN or DEVELOPER role. Non-admins receive 403 Forbidden.
    */
   getLiveTeam: adminProcedure.query(async ({ ctx }) => {
-    // Fetch all active employees
+    // Fetch all active employees/users
     const allEmployees = await ctx.db.query.users.findMany({
       where: eq(users.isActive, true),
+      with: {
+        branch: true,
+      },
       columns: {
         id: true,
         firstName: true,
@@ -284,6 +322,10 @@ export const locationRouter = createTRPCRouter({
         profilePhoto: true,
         role: true,
         branchId: true,
+        lastLat: true,
+        lastLng: true,
+        lastActiveAt: true,
+        connectivityStatus: true,
       },
     });
 
@@ -293,10 +335,55 @@ export const locationRouter = createTRPCRouter({
       trackingStatuses.map((s) => [s.employeeId, s]),
     );
 
+    // Also fetch latest location points from employeeLocations as fallback
+    const latestLocations = await ctx.db
+      .select({
+        employeeId: employeeLocations.employeeId,
+        latitude: employeeLocations.latitude,
+        longitude: employeeLocations.longitude,
+        accuracy: employeeLocations.accuracy,
+        speed: employeeLocations.speed,
+        heading: employeeLocations.heading,
+        recordedAt: employeeLocations.recordedAt,
+      })
+      .from(employeeLocations)
+      .orderBy(desc(employeeLocations.recordedAt));
+
+    const latestLocationMap = new Map<string, (typeof latestLocations)[0]>();
+    for (const loc of latestLocations) {
+      if (!latestLocationMap.has(loc.employeeId)) {
+        latestLocationMap.set(loc.employeeId, loc);
+      }
+    }
+
     const now = Date.now();
 
     return allEmployees.map((emp) => {
       const status = statusMap.get(emp.id);
+      const latestLoc = latestLocationMap.get(emp.id);
+
+      // Determine best available latitude and longitude
+      const lastLatitude =
+        status?.lastLatitude ??
+        latestLoc?.latitude ??
+        (emp.lastLat ? parseFloat(emp.lastLat) : null) ??
+        (emp.branch?.latitude ? parseFloat(emp.branch.latitude) : null);
+
+      const lastLongitude =
+        status?.lastLongitude ??
+        latestLoc?.longitude ??
+        (emp.lastLng ? parseFloat(emp.lastLng) : null) ??
+        (emp.branch?.longitude ? parseFloat(emp.branch.longitude) : null);
+
+      const lastUpdatedAt =
+        status?.lastUpdatedAt ??
+        latestLoc?.recordedAt ??
+        emp.lastActiveAt ??
+        null;
+
+      const lastAccuracy = status?.lastAccuracy ?? latestLoc?.accuracy ?? null;
+      const lastHeading = status?.lastHeading ?? latestLoc?.heading ?? null;
+      const lastSpeed = status?.lastSpeed ?? latestLoc?.speed ?? null;
 
       let statusBadge:
         | "ONLINE_TRACKING"
@@ -311,47 +398,54 @@ export const locationRouter = createTRPCRouter({
         status?.locationPermissionStatus === "DENIED"
       ) {
         statusBadge = "LOCATION_DISABLED";
-      } else if (status?.isOnline) {
-        const lastUpdatedMs = status.lastUpdatedAt
-          ? new Date(status.lastUpdatedAt).getTime()
+      } else {
+        const lastUpdatedMs = lastUpdatedAt
+          ? new Date(lastUpdatedAt).getTime()
           : 0;
-        // If last update was within 22 minutes, consider online
-        if (now - lastUpdatedMs <= 22 * 60 * 1000) {
-          statusBadge = "ONLINE_TRACKING";
-        } else {
+        const isRecentlyActive =
+          now - lastUpdatedMs <= 22 * 60 * 1000;
+
+        if (status?.isOnline || isRecentlyActive) {
+          if (isRecentlyActive && lastLatitude !== null && lastLongitude !== null) {
+            statusBadge = "ONLINE_TRACKING";
+          } else if (lastLatitude !== null && lastLongitude !== null) {
+            statusBadge = "OFFLINE_BUFFERING";
+          } else {
+            statusBadge = "OFFLINE_BUFFERING";
+          }
+        } else if (lastLatitude !== null && lastLongitude !== null) {
           statusBadge = "OFFLINE_BUFFERING";
+        } else {
+          statusBadge = "LOCATION_DISABLED";
         }
       }
 
       return {
-        ...emp,
-        tracking: status
-          ? {
-              lastLatitude: status.lastLatitude,
-              lastLongitude: status.lastLongitude,
-              lastAccuracy: status.lastAccuracy,
-              lastHeading: status.lastHeading,
-              lastSpeed: status.lastSpeed,
-              lastUpdatedAt: status.lastUpdatedAt,
-              locationPermissionStatus: status.locationPermissionStatus,
-              isOnline: status.isOnline,
-              isLockedOut: status.isLockedOut,
-              lockoutReason: status.lockoutReason,
-              statusBadge,
-            }
-          : {
-              lastLatitude: null,
-              lastLongitude: null,
-              lastAccuracy: null,
-              lastHeading: null,
-              lastSpeed: null,
-              lastUpdatedAt: null,
-              locationPermissionStatus: "DISABLED",
-              isOnline: false,
-              isLockedOut: false,
-              lockoutReason: null,
-              statusBadge: "LOCATION_DISABLED" as const,
-            },
+        id: emp.id,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        employeeCode: emp.employeeCode,
+        email: emp.email,
+        profilePhoto: emp.profilePhoto,
+        role: emp.role,
+        branchId: emp.branchId,
+        tracking: {
+          lastLatitude,
+          lastLongitude,
+          lastAccuracy,
+          lastHeading,
+          lastSpeed,
+          lastUpdatedAt,
+          locationPermissionStatus:
+            status?.locationPermissionStatus ?? "ALWAYS",
+          isOnline:
+            status?.isOnline ??
+            (now - (lastUpdatedAt ? new Date(lastUpdatedAt).getTime() : 0) <=
+              22 * 60 * 1000),
+          isLockedOut: status?.isLockedOut ?? false,
+          lockoutReason: status?.lockoutReason ?? null,
+          statusBadge,
+        },
       };
     });
   }),
