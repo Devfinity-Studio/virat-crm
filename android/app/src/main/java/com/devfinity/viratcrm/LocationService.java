@@ -1,5 +1,6 @@
 package com.devfinity.viratcrm;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -7,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.location.Location;
 import android.os.Build;
@@ -16,6 +18,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -55,10 +58,14 @@ public class LocationService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        networkExecutor = Executors.newSingleThreadExecutor();
-        createNotificationChannel();
-        startInForeground();
-        setupLocationTracking();
+        try {
+            networkExecutor = Executors.newSingleThreadExecutor();
+            createNotificationChannel();
+            startInForeground();
+            setupLocationTracking();
+        } catch (Exception e) {
+            Log.e(TAG, "LocationService onCreate failed: " + e.getMessage(), e);
+        }
     }
 
     private void createNotificationChannel() {
@@ -78,37 +85,54 @@ public class LocationService extends Service {
     }
 
     private void startInForeground() {
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("VBPL - Shift Active")
-                .setContentText("Field location tracking is active.")
-                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
-                .build();
+        try {
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentTitle("VBPL - Shift Active")
+                    .setContentText("Field location tracking is active.")
+                    .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setOngoing(true)
+                    .build();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
-        } else {
-            startForeground(NOTIFICATION_ID, notification);
+            boolean hasLocationPermission =
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && hasLocationPermission) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "startInForeground failed: " + e.getMessage(), e);
         }
     }
 
     private void setupLocationTracking() {
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        try {
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) return;
-                for (Location location : locationResult.getLocations()) {
-                    if (location != null) {
-                        dispatchLocationToServer(location);
+            locationCallback = new LocationCallback() {
+                @Override
+                public void onLocationResult(LocationResult locationResult) {
+                    if (locationResult == null) return;
+                    for (Location location : locationResult.getLocations()) {
+                        if (location != null) {
+                            dispatchLocationToServer(location);
+                        }
                     }
                 }
-            }
-        };
+            };
 
-        try {
+            boolean hasPermission =
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+
+            if (!hasPermission) {
+                Log.w(TAG, "Location permission not granted, skipping fused location updates registration.");
+                return;
+            }
+
             LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 60000)
                     .setMinUpdateIntervalMillis(30000)
                     .setMinUpdateDistanceMeters(0)
@@ -122,10 +146,14 @@ public class LocationService extends Service {
             Log.i(TAG, "Location updates requested successfully (every 60s).");
         } catch (SecurityException e) {
             Log.e(TAG, "Permission denied for location updates: " + e.getMessage());
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to setup location tracking: " + e.getMessage(), e);
         }
     }
 
     private void dispatchLocationToServer(final Location location) {
+        if (networkExecutor == null || networkExecutor.isShutdown()) return;
+
         networkExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -187,24 +215,31 @@ public class LocationService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startInForeground();
+        try {
+            startInForeground();
+        } catch (Exception e) {
+            Log.e(TAG, "onStartCommand failed: " + e.getMessage(), e);
+        }
         return START_STICKY;
     }
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        // Essential: Keep service alive when app is swiped away from Recents
         Log.i(TAG, "App swiped away from recent tasks. LocationService staying alive in background.");
         super.onTaskRemoved(rootIntent);
     }
 
     @Override
     public void onDestroy() {
-        if (fusedLocationClient != null && locationCallback != null) {
-            fusedLocationClient.removeLocationUpdates(locationCallback);
-        }
-        if (networkExecutor != null) {
-            networkExecutor.shutdown();
+        try {
+            if (fusedLocationClient != null && locationCallback != null) {
+                fusedLocationClient.removeLocationUpdates(locationCallback);
+            }
+            if (networkExecutor != null) {
+                networkExecutor.shutdown();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "onDestroy cleanup error: " + e.getMessage(), e);
         }
         super.onDestroy();
     }
@@ -215,4 +250,3 @@ public class LocationService extends Service {
         return null;
     }
 }
-

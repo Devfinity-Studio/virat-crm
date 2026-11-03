@@ -38,7 +38,7 @@ export interface VersionCheckResult {
 }
 
 export const DEFAULT_VERSION_POLICY: AppVersionPolicy = {
-  minVersionCode: 4,
+  minVersionCode: 1,
   minVersionName: "1.1.0",
   latestVersionCode: 4,
   latestVersionName: "1.1.0",
