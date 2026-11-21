@@ -15,8 +15,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
- * Capacitor Bridge Plugin to coordinate native LocationService lifecycle
- * and provide app version telemetry directly to TypeScript/JavaScript.
+ * Backwards-compatibility bridge plugin.
  */
 @CapacitorPlugin(name = "LocationBridge")
 public class LocationBridgePlugin extends Plugin {
@@ -40,7 +39,7 @@ public class LocationBridgePlugin extends Plugin {
             JSObject ret = new JSObject();
             ret.put("name", "VBPL");
             ret.put("packageId", context.getPackageName());
-            ret.put("versionName", pInfo.versionName != null ? pInfo.versionName : "1.1.1");
+            ret.put("versionName", pInfo.versionName != null ? pInfo.versionName : "1.1.2");
             ret.put("versionCode", buildNumber);
             call.resolve(ret);
         } catch (Exception e) {
@@ -58,7 +57,6 @@ public class LocationBridgePlugin extends Plugin {
             if (token != null && !token.isEmpty()) {
                 SharedPreferences prefs = context.getSharedPreferences("virat_prefs", Context.MODE_PRIVATE);
                 prefs.edit().putString("auth_token", token).apply();
-                Log.d(TAG, "Auth token persisted in SharedPreferences.");
             }
 
             Intent serviceIntent = new Intent(context, LocationService.class);
@@ -68,7 +66,7 @@ public class LocationBridgePlugin extends Plugin {
                 context.startService(serviceIntent);
             }
 
-            Log.i(TAG, "Native LocationService started.");
+            Log.i(TAG, "Native LocationService started via LocationBridge.");
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "Failed to start native LocationService: " + e.getMessage());
@@ -80,13 +78,9 @@ public class LocationBridgePlugin extends Plugin {
     public void stopService(PluginCall call) {
         try {
             Context context = getContext();
-            SharedPreferences prefs = context.getSharedPreferences("virat_prefs", Context.MODE_PRIVATE);
-            prefs.edit().remove("auth_token").apply();
-
             Intent serviceIntent = new Intent(context, LocationService.class);
             context.stopService(serviceIntent);
-
-            Log.i(TAG, "Native LocationService stopped.");
+            Log.i(TAG, "Native LocationService stopped via LocationBridge.");
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "Failed to stop native LocationService: " + e.getMessage());
@@ -98,11 +92,10 @@ public class LocationBridgePlugin extends Plugin {
     public void setToken(PluginCall call) {
         try {
             String token = call.getString("token");
-            Context context = getContext();
             if (token != null && !token.isEmpty()) {
+                Context context = getContext();
                 SharedPreferences prefs = context.getSharedPreferences("virat_prefs", Context.MODE_PRIVATE);
-                prefs.edit().putString("auth_token", token).apply();
-                Log.d(TAG, "Auth token updated in SharedPreferences.");
+                prefs.edit().putString("auth_token", token).putLong("last_token_update", System.currentTimeMillis()).apply();
             }
             call.resolve();
         } catch (Exception e) {

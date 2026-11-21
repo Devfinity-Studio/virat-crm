@@ -1,28 +1,40 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
 import {
   locationEngine,
   type PermissionState,
   type LocationCoordinates,
 } from "@/lib/location-engine";
-import { isLockedOut, getLockoutReason, unlockSession } from "@/lib/offline-location-queue";
+import {
+  isLockedOut,
+  getLockoutReason,
+  unlockSession,
+} from "@/lib/offline-location-queue";
+import {
+  BackgroundLocationGuard,
+  getNativeRequirements,
+} from "@/lib/background-location-guard";
+import { Capacitor } from "@capacitor/core";
 import { PermissionRequiredModal } from "./PermissionRequiredModal";
 import { OfflineWarningBanner } from "./OfflineWarningBanner";
 import { LockoutScreen } from "./LockoutScreen";
+import { toast } from "sonner";
 
 export function LocationTrackerProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const { data: user } = api.users.getMe.useQuery(undefined, {
     retry: false,
     staleTime: 60000,
   });
 
-  const [permissionState, setPermissionState] =
+  const [, setPermissionState] =
     useState<PermissionState | null>(null);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
@@ -33,7 +45,6 @@ export function LocationTrackerProvider({
 
   const handlePositionUpdate = useCallback(
     (pos: LocationCoordinates) => {
-      // Sync position to server tracking status for any authenticated active user
       if (user?.isActive) {
         updateStatusMutation.mutate({
           locationPermissionStatus: "ALWAYS",
@@ -57,31 +68,64 @@ export function LocationTrackerProvider({
   useEffect(() => {
     if (!user || !user.isActive) return;
 
+    // Check if native 20-minute cutoff forced a logout
+    if (Capacitor.isNativePlatform()) {
+      void (async () => {
+        try {
+          const res = await BackgroundLocationGuard.checkForceLogout();
+          if (res.forceLogout) {
+            toast.error(res.reason ?? "Offline grace period (20 minutes) expired.");
+            localStorage.removeItem("virat_auth_token");
+            await fetch("/api/auth/logout", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reason: res.reason ?? "Offline grace period expired (20 min cutoff)" }),
+            });
+            router.push("/login");
+            return;
+          }
+        } catch {}
+      })();
+    }
+
     // A valid authenticated session clears any stale local lockout flag
     if (user.role !== "Employee" || user.isActive) {
       setLockedOutState(false);
       unlockSession();
     }
 
-    // Ensure auth token is cached locally for native background service
-    if (typeof window !== "undefined") {
-      void (async () => {
-        try {
-          if (!localStorage.getItem("virat_auth_token")) {
-            const res = await fetch("/api/auth/token");
-            if (res.ok) {
-              const data = (await res.json()) as { token?: string };
-              if (data.token) {
-                localStorage.setItem("virat_auth_token", data.token);
-              }
+    // Ensure auth token is cached locally and synced to native SharedPreferences
+    void (async () => {
+      try {
+        let token = typeof window !== "undefined" ? localStorage.getItem("virat_auth_token") : null;
+        if (!token) {
+          const res = await fetch("/api/auth/token");
+          if (res.ok) {
+            const data = (await res.json()) as { token?: string };
+            if (data.token) {
+              token = data.token;
+              localStorage.setItem("virat_auth_token", token);
             }
           }
-        } catch {}
-      })();
-    }
+        }
+        if (token && Capacitor.isNativePlatform()) {
+          await BackgroundLocationGuard.updateAuthToken({ token });
+        }
+      } catch (err) {
+        console.warn("Failed to sync background auth token:", err);
+      }
+    })();
 
-    // Check permission flow on login
+    // Evaluate gatekeeper checks
     const initEngine = async () => {
+      if (Capacitor.isNativePlatform() && user.role === "Employee") {
+        const reqs = await getNativeRequirements();
+        if (!reqs.allPassed) {
+          setShowPermissionModal(true);
+          return;
+        }
+      }
+
       const perm = await locationEngine.checkPermission();
       setPermissionState(perm);
 
@@ -89,7 +133,6 @@ export function LocationTrackerProvider({
         if (user.role === "Employee") {
           setShowPermissionModal(true);
         } else {
-          // For non-employees (e.g. Admins/Managers), request permission non-intrusively
           const granted = await locationEngine.requestPermission();
           if (granted) {
             await locationEngine.startTracking();
@@ -127,7 +170,7 @@ export function LocationTrackerProvider({
     return () => {
       locationEngine.stopTracking();
     };
-  }, [user, handlePositionUpdate]);
+  }, [user, handlePositionUpdate, router]);
 
   const handlePermissionGranted = async () => {
     setShowPermissionModal(false);

@@ -53,3 +53,8 @@
 - **Phase 59: Product Management & In-Sale Quick-Add [COMPLETED]**
   - Goal: Create a dedicated products catalog management page to view, search, and add products, and integrate an in-sale quick-add product modal on the new sales page with instant auto-selection.
   - Requirements: PROD-CAT-01, PROD-QUICK-01, PROD-API-01, PROD-RBAC-01
+
+- **Phase 60: Native Android Background Location Guard & Visual Permission Gatekeeper**
+  - Goal: Build a blocking multi-step visual permission & battery gatekeeper in Next.js/Capacitor that hard-locks access until "Allow all the time" and Unrestricted Battery are verified; implement native foreground service tracking with distance filters (25m), 5–10 min stationary heartbeat, GPS-off detection, native SQLite offline queue, and strict 20-minute auto-purge/logout cutoff.
+  - Requirements: LOC-GATE-01, LOC-GATE-02, LOC-GATE-03, LOC-TRACK-01, LOC-BUFFER-01, LOC-BACKEND-01
+
