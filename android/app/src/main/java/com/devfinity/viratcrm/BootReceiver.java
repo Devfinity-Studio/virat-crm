@@ -9,10 +9,12 @@ import android.util.Log;
 
 /**
  * BroadcastReceiver triggered on system reboot to restore
- * background location tracking service automatically.
+ * background location tracking service automatically if the shift
+ * was active and within the 20-minute offline window.
  */
 public class BootReceiver extends BroadcastReceiver {
     private static final String TAG = "ViratBootReceiver";
+    private static final long CUTOFF_20_MINUTES_MS = 20 * 60 * 1000L;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -25,9 +27,18 @@ public class BootReceiver extends BroadcastReceiver {
 
                 SharedPreferences prefs = context.getSharedPreferences("virat_prefs", Context.MODE_PRIVATE);
                 String token = prefs.getString("auth_token", null);
+                long lastSync = prefs.getLong("last_successful_sync", 0);
+                long now = System.currentTimeMillis();
 
                 if (token != null && !token.isEmpty()) {
-                    Log.i(TAG, "Device rebooted with active session. Restarting LocationService...");
+                    if (lastSync > 0 && (now - lastSync > CUTOFF_20_MINUTES_MS)) {
+                        Log.w(TAG, "Device rebooted but session exceeded 20-minute cutoff while offline. Terminating.");
+                        LocationDatabaseHelper.getInstance(context).purgeAll();
+                        prefs.edit().remove("auth_token").putBoolean("session_force_logged_out", true).apply();
+                        return;
+                    }
+
+                    Log.i(TAG, "Device rebooted with active shift. Resuming LocationService...");
                     Intent serviceIntent = new Intent(context, LocationService.class);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         context.startForegroundService(serviceIntent);
@@ -35,7 +46,7 @@ public class BootReceiver extends BroadcastReceiver {
                         context.startService(serviceIntent);
                     }
                 } else {
-                    Log.i(TAG, "Device rebooted but no active session found. Service not restarted.");
+                    Log.i(TAG, "Device rebooted with no active session. LocationService not restarted.");
                 }
             }
         } catch (Exception e) {

@@ -1,6 +1,6 @@
 {
   "name": "virat-crm",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -25,6 +25,7 @@
     "@base-ui/react": "^1.4.1",
     "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/android": "^8.4.2",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
     "@capacitor/ios": "^8.5.2",
