@@ -10,6 +10,7 @@ import {
   Sliders,
   Power,
   AppWindow,
+  Smartphone,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -67,6 +68,10 @@ export default function DeveloperPage() {
   });
 
   const [maxUsersInput, setMaxUsersInput] = useState<string>("");
+  const [minVersionCodeInput, setMinVersionCodeInput] = useState<string>("");
+  const [latestVersionCodeInput, setLatestVersionCodeInput] = useState<string>("");
+  const [minVersionNameInput, setMinVersionNameInput] = useState<string>("");
+  const [latestVersionNameInput, setLatestVersionNameInput] = useState<string>("");
 
   if (isUserLoading) {
     return (
@@ -103,6 +108,11 @@ export default function DeveloperPage() {
     isSystemLocked: false,
     isReadOnly: false,
     disabledFeaturesGlobal: [] as string[],
+    forceUpdateEnabled: false,
+    minAppVersionCode: 1,
+    latestAppVersionCode: 5,
+    minAppVersionName: "1.1.0",
+    latestAppVersionName: "1.1.1",
   };
 
   const handleToggleLock = () => {
@@ -117,6 +127,28 @@ export default function DeveloperPage() {
       ...activeSettings,
       isReadOnly: !activeSettings.isReadOnly,
     });
+  };
+
+  const handleToggleForceUpdate = () => {
+    updateSettingsMutation.mutate({
+      ...activeSettings,
+      forceUpdateEnabled: !activeSettings.forceUpdateEnabled,
+    });
+  };
+
+  const handleUpdateAppVersionPolicy = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSettingsMutation.mutate({
+      ...activeSettings,
+      minAppVersionCode: minVersionCodeInput ? parseInt(minVersionCodeInput, 10) : activeSettings.minAppVersionCode,
+      latestAppVersionCode: latestVersionCodeInput ? parseInt(latestVersionCodeInput, 10) : activeSettings.latestAppVersionCode,
+      minAppVersionName: minVersionNameInput.trim() || activeSettings.minAppVersionName,
+      latestAppVersionName: latestVersionNameInput.trim() || activeSettings.latestAppVersionName,
+    });
+    setMinVersionCodeInput("");
+    setLatestVersionCodeInput("");
+    setMinVersionNameInput("");
+    setLatestVersionNameInput("");
   };
 
   const handleFeatureToggle = (featureKey: string) => {
@@ -368,6 +400,112 @@ export default function DeveloperPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Mobile APK Force Update Controller */}
+        <Card className="overflow-hidden rounded-2xl border-slate-100 shadow-xl">
+          <CardHeader className="border-b border-slate-100 bg-slate-50">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                  <Smartphone className="h-5 w-5 text-indigo-500" />
+                  Mobile App Force Update Controller
+                </CardTitle>
+                <CardDescription>
+                  Control whether installed Android APKs enforce mandatory Google Play Store updates
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-slate-500">
+                  Force Update:
+                </span>
+                {activeSettings.forceUpdateEnabled ? (
+                  <Badge variant="destructive" className="font-bold">
+                    ENFORCING UPDATES (ACTIVE)
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="secondary"
+                    className="border-emerald-100 bg-emerald-50 font-bold text-emerald-700"
+                  >
+                    STANDBY (ALLOW ALL VERSIONS)
+                  </Badge>
+                )}
+                <Switch
+                  checked={activeSettings.forceUpdateEnabled}
+                  onCheckedChange={handleToggleForceUpdate}
+                  disabled={updateSettingsMutation.isPending}
+                  className="data-[state=checked]:bg-red-500 data-[state=unchecked]:bg-slate-300"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 p-6">
+            <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-xs leading-relaxed text-amber-900">
+              <span className="font-bold">Workflow Guidance: </span>
+              Keep Force Update <strong>STANDBY (OFF)</strong> while your new build is submitted or pending review on the Google Play Store. Once Google approves and pushes your update live, switch this toggle <strong>ON</strong> so installed mobile apps on older version codes are cleanly prompted to update from the Play Store.
+            </div>
+
+            <form onSubmit={handleUpdateAppVersionPolicy} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Minimum Version Code</label>
+                <Input
+                  type="number"
+                  className="rounded-xl"
+                  value={minVersionCodeInput}
+                  onChange={(e) => setMinVersionCodeInput(e.target.value)}
+                  placeholder={String(activeSettings.minAppVersionCode)}
+                />
+                <p className="text-[10px] text-slate-400">APKs below this code are forced to update</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Latest Version Code</label>
+                <Input
+                  type="number"
+                  className="rounded-xl"
+                  value={latestVersionCodeInput}
+                  onChange={(e) => setLatestVersionCodeInput(e.target.value)}
+                  placeholder={String(activeSettings.latestAppVersionCode)}
+                />
+                <p className="text-[10px] text-slate-400">Current release code in Play Store</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Min Version Name</label>
+                <Input
+                  type="text"
+                  className="rounded-xl"
+                  value={minVersionNameInput}
+                  onChange={(e) => setMinVersionNameInput(e.target.value)}
+                  placeholder={activeSettings.minAppVersionName}
+                />
+                <p className="text-[10px] text-slate-400">e.g. 1.1.0</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Latest Version Name</label>
+                <Input
+                  type="text"
+                  className="rounded-xl"
+                  value={latestVersionNameInput}
+                  onChange={(e) => setLatestVersionNameInput(e.target.value)}
+                  placeholder={activeSettings.latestAppVersionName}
+                />
+                <p className="text-[10px] text-slate-400">e.g. 1.1.1</p>
+              </div>
+
+              <div className="sm:col-span-2 lg:col-span-4 flex justify-end pt-2">
+                <Button
+                  type="submit"
+                  disabled={updateSettingsMutation.isPending}
+                  className="rounded-xl bg-slate-900 text-white hover:bg-slate-800"
+                >
+                  Save Version Policy
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
         {/* Database User Wipeout Area */}
         <Card className="overflow-hidden rounded-2xl border-slate-100 shadow-xl">

@@ -42,7 +42,7 @@ export const DEFAULT_VERSION_POLICY: AppVersionPolicy = {
   minVersionName: "1.1.0",
   latestVersionCode: 5,
   latestVersionName: "1.1.1",
-  forceUpdate: true,
+  forceUpdate: false,
   playStoreUrl:
     "https://play.google.com/store/apps/details?id=com.devfinity.viratcrm",
   marketUrl: "market://details?id=com.devfinity.viratcrm",
@@ -81,26 +81,25 @@ export async function checkAppVersion(): Promise<VersionCheckResult> {
   try {
     const info = await LocationBridge.getAppInfo();
     const installedCode = Number(info.versionCode) || 3;
-    const isOutdated = installedCode < policy.minVersionCode;
+    const isOutdated = Boolean(policy.forceUpdate) && installedCode < policy.minVersionCode;
 
     return {
       isNative: true,
       isOutdated,
-      installedVersionName: info.versionName ?? "1.0.2",
+      installedVersionName: info.versionName ?? "1.1.1",
       installedVersionCode: installedCode,
       policy,
     };
   } catch {
     // If LocationBridge.getAppInfo() throws/fails on native platform,
-    // this definitively means the device is running the legacy APK (v1.0.2 / versionCode <= 3)
-    // which does not have the LocationBridge plugin registered!
+    // this means the device is running the legacy APK (v1.0.2 / versionCode <= 3).
+    // Only flag as outdated if forceUpdate is enabled by the developer.
     return {
       isNative: true,
-      isOutdated: true,
+      isOutdated: Boolean(policy.forceUpdate),
       installedVersionName: "1.0.2",
       installedVersionCode: 3,
       policy,
     };
   }
 }
-

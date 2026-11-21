@@ -28,18 +28,41 @@ export const developerRouter = createTRPCRouter({
         isSystemLocked: z.boolean(),
         isReadOnly: z.boolean(),
         disabledFeaturesGlobal: z.array(z.string()),
+        forceUpdateEnabled: z.boolean().optional(),
+        minAppVersionCode: z.number().int().min(1).optional(),
+        latestAppVersionCode: z.number().int().min(1).optional(),
+        minAppVersionName: z.string().max(32).optional(),
+        latestAppVersionName: z.string().max(32).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const updateData: Record<string, unknown> = {
+        maxUsers: input.maxUsers,
+        isSystemLocked: input.isSystemLocked,
+        isReadOnly: input.isReadOnly,
+        disabledFeaturesGlobal: input.disabledFeaturesGlobal,
+        updatedAt: new Date(),
+      };
+
+      if (input.forceUpdateEnabled !== undefined) {
+        updateData.forceUpdateEnabled = input.forceUpdateEnabled;
+      }
+      if (input.minAppVersionCode !== undefined) {
+        updateData.minAppVersionCode = input.minAppVersionCode;
+      }
+      if (input.latestAppVersionCode !== undefined) {
+        updateData.latestAppVersionCode = input.latestAppVersionCode;
+      }
+      if (input.minAppVersionName !== undefined) {
+        updateData.minAppVersionName = input.minAppVersionName;
+      }
+      if (input.latestAppVersionName !== undefined) {
+        updateData.latestAppVersionName = input.latestAppVersionName;
+      }
+
       const [updated] = await ctx.db
         .update(systemSettings)
-        .set({
-          maxUsers: input.maxUsers,
-          isSystemLocked: input.isSystemLocked,
-          isReadOnly: input.isReadOnly,
-          disabledFeaturesGlobal: input.disabledFeaturesGlobal,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(systemSettings.id, "global"))
         .returning();
 

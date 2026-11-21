@@ -76,16 +76,9 @@ export async function POST(request: NextRequest) {
     // 3. Dispatch push notifications and in-app alerts to all admins
     await notifyAdmins(title, message);
 
-    // 4. Invalidate server-side session cookie
-    try {
-      await logout();
-    } catch {
-      // Ignore if called outside cookie context
-    }
-
-    const response = NextResponse.json({ success: true, loggedOut: true });
-    response.cookies.set("session", "", { expires: new Date(0) });
-    return response;
+    // Note: Do NOT log out or destroy the session. A temporary location service
+    // issue should never automatically log out the user.
+    return NextResponse.json({ success: true, loggedOut: false });
   } catch (error) {
     console.error("Emergency Revoke Error:", error);
     return NextResponse.json(

@@ -35,13 +35,19 @@ export async function login(userId: string) {
   (await cookies()).set("session", session, {
     expires,
     httpOnly: true,
+    path: "/",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
   });
 }
 
 export async function logout() {
   // Destroy the session
-  (await cookies()).set("session", "", { expires: new Date(0) });
+  (await cookies()).set("session", "", {
+    path: "/",
+    sameSite: "lax",
+    expires: new Date(0),
+  });
 }
 
 export async function getSession() {
@@ -66,6 +72,9 @@ export async function updateSession(request: NextRequest) {
     name: "session",
     value: await encrypt(parsed),
     httpOnly: true,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     expires: new Date(parsed.expires),
   });
   return res;
