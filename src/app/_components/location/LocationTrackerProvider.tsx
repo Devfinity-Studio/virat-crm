@@ -63,6 +63,23 @@ export function LocationTrackerProvider({
       unlockSession();
     }
 
+    // Ensure auth token is cached locally for native background service
+    if (typeof window !== "undefined") {
+      void (async () => {
+        try {
+          if (!localStorage.getItem("virat_auth_token")) {
+            const res = await fetch("/api/auth/token");
+            if (res.ok) {
+              const data = (await res.json()) as { token?: string };
+              if (data.token) {
+                localStorage.setItem("virat_auth_token", data.token);
+              }
+            }
+          }
+        } catch {}
+      })();
+    }
+
     // Check permission flow on login
     const initEngine = async () => {
       const perm = await locationEngine.checkPermission();

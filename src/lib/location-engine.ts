@@ -233,8 +233,23 @@ class LocationEngine {
    */
   private async startNativeTracking(): Promise<boolean> {
     try {
-      // Start native Foreground Service so tracking continues even when app is closed / swiped away
-      const token = typeof window !== "undefined" ? localStorage.getItem("virat_auth_token") : null;
+      // Start native Foreground Service so tracking continues even when app is closed / screen locked
+      let token = typeof window !== "undefined" ? localStorage.getItem("virat_auth_token") : null;
+      if (!token && typeof window !== "undefined") {
+        try {
+          const tokenRes = await fetch("/api/auth/token");
+          if (tokenRes.ok) {
+            const data = (await tokenRes.json()) as { token?: string };
+            if (data.token) {
+              token = data.token;
+              localStorage.setItem("virat_auth_token", token);
+            }
+          }
+        } catch (fetchErr) {
+          console.warn("Failed to fetch fresh auth token for location bridge:", fetchErr);
+        }
+      }
+
       try {
         await LocationBridge.startService(token ? { token } : undefined);
       } catch (bridgeErr) {
