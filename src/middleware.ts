@@ -13,6 +13,10 @@ const publicPaths = [
   "/api/auth/logout",
   "/api/trpc",
   "/api/rest",
+  "/api/health",
+  "/api/app-version",
+  "/api/location/batch-sync",
+  "/api/location/emergency-revoke",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -23,6 +27,18 @@ export async function middleware(request: NextRequest) {
   const isPublicPath = publicPaths.some((p) => path.startsWith(p));
   if (isPublicPath) {
     return NextResponse.next();
+  }
+
+  // Check Bearer authorization header (for native mobile apps or background telemetry)
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+    try {
+      await decrypt(token);
+      return NextResponse.next();
+    } catch {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
   // Get session from cookie
@@ -36,8 +52,6 @@ export async function middleware(request: NextRequest) {
     // Verify session
     await decrypt(session);
 
-    // If we're at the root or a dashboard path, we can optionally refresh the token here
-    // For now, just let it pass if valid
     return NextResponse.next();
   } catch {
     // Session invalid or expired

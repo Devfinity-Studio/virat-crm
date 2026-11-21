@@ -197,7 +197,7 @@ class LocationEngine {
    */
   private startWebTracking(): boolean {
     if (!("geolocation" in navigator)) {
-      this.triggerEmergencyRevoke("Geolocation API not available in browser");
+      console.warn("Geolocation API not available in browser");
       return false;
     }
 
@@ -213,17 +213,9 @@ class LocationEngine {
         });
       },
       (error) => {
-        console.error("Geolocation watch error:", error);
-        if (
-          error.code === error.PERMISSION_DENIED ||
-          error.code === error.POSITION_UNAVAILABLE
-        ) {
-          // Trigger immediate logout and alert admins
-          this.triggerEmergencyRevoke(
-            error.code === error.PERMISSION_DENIED
-              ? "Location permission revoked by user"
-              : "Device GPS turned off or position unavailable",
-          );
+        console.warn("Geolocation watch update:", error.message);
+        if (error.code === error.PERMISSION_DENIED) {
+          this.callbacks.onPermissionChange?.("DENIED");
         }
       },
       {
@@ -259,11 +251,9 @@ class LocationEngine {
         },
         (location, error) => {
           if (error) {
-            console.error("Native background geolocation error:", error);
+            console.warn("Native background geolocation event:", error);
             if (error.code === "NOT_AUTHORIZED") {
-              this.triggerEmergencyRevoke(
-                "Native background location permission revoked",
-              );
+              this.callbacks.onPermissionChange?.("DENIED");
             }
             return;
           }
@@ -415,31 +405,28 @@ class LocationEngine {
   };
 
   /**
-   * Hard Lockout execution:
-   * Wipe local session, notify callback, and block UI.
+   * Lockout handler:
+   * Notify callback and block UI non-destructively without wiping user credentials.
    */
   private handleLockout(reason: string): void {
     setLockedOut(true, reason);
     this.stopTracking();
     this.callbacks.onLockout?.(reason);
-
-    // Wipe session cookie on client
-    document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   }
 
   /**
-   * Immediate Emergency Revoke:
-   * Triggered when location permission or GPS hardware is disabled.
+   * Location Revoke alert:
+   * Notifies server when location permission or GPS hardware is disabled,
+   * without destroying the user's active session.
    */
   public triggerEmergencyRevoke(reason: string): void {
     if (typeof window === "undefined") return;
 
-    console.warn("[EMERGENCY REVOKE]", reason);
+    console.warn("[LOCATION REVOKE ALERT]", reason);
     this.stopTracking();
 
     const payload = JSON.stringify({ reason });
 
-    // 1. Send beacon or keepalive fetch so it survives page navigation/teardown
     if ("sendBeacon" in navigator) {
       const blob = new Blob([payload], { type: "application/json" });
       navigator.sendBeacon("/api/location/emergency-revoke", blob);
@@ -451,12 +438,6 @@ class LocationEngine {
         keepalive: true,
       });
     }
-
-    // 2. Clear client session cookie
-    document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-
-    // 3. Immediately redirect to login with reason
-    window.location.href = `/login?reason=location_disabled`;
   }
 
   /**

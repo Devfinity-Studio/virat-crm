@@ -82,11 +82,6 @@ export const heartbeatRouter = createTRPCRouter({
           "GPS Violation Alert",
           `${dbUser.firstName} ${dbUser.lastName} (${dbUser.employeeCode}) has disabled their device's GPS!`,
         );
-        // Automatically deactivate user for GPS violation lockout
-        await db
-          .update(users)
-          .set({ isActive: false })
-          .where(eq(users.id, dbUser.id));
       }
 
       return { success: true };

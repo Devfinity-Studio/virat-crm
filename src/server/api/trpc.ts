@@ -36,6 +36,12 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
     isSystemLocked: false,
     isReadOnly: false,
     disabledFeaturesGlobal: [] as string[],
+    forceUpdateEnabled: false,
+    minAppVersionCode: 1,
+    latestAppVersionCode: 5,
+    minAppVersionName: "1.1.0",
+    latestAppVersionName: "1.1.1",
+    updatedAt: new Date(),
   };
 
   return {
