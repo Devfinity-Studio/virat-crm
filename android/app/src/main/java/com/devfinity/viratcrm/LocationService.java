@@ -14,6 +14,7 @@ import android.location.Location;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -54,11 +55,17 @@ public class LocationService extends Service {
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
     private ExecutorService networkExecutor;
+    private PowerManager.WakeLock wakeLock;
 
     @Override
     public void onCreate() {
         super.onCreate();
         try {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null) {
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ViratCRM:LocationWakeLock");
+                wakeLock.acquire(10 * 60 * 1000L);
+            }
             networkExecutor = Executors.newSingleThreadExecutor();
             createNotificationChannel();
             startInForeground();
@@ -116,6 +123,11 @@ public class LocationService extends Service {
                 @Override
                 public void onLocationResult(LocationResult locationResult) {
                     if (locationResult == null) return;
+                    if (wakeLock != null && !wakeLock.isHeld()) {
+                        try {
+                            wakeLock.acquire(60 * 1000L);
+                        } catch (Exception ignored) {}
+                    }
                     for (Location location : locationResult.getLocations()) {
                         if (location != null) {
                             dispatchLocationToServer(location);
@@ -136,6 +148,7 @@ public class LocationService extends Service {
             LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 60000)
                     .setMinUpdateIntervalMillis(30000)
                     .setMinUpdateDistanceMeters(0)
+                    .setWaitForAccurateLocation(false)
                     .build();
 
             fusedLocationClient.requestLocationUpdates(
@@ -237,6 +250,9 @@ public class LocationService extends Service {
             }
             if (networkExecutor != null) {
                 networkExecutor.shutdown();
+            }
+            if (wakeLock != null && wakeLock.isHeld()) {
+                wakeLock.release();
             }
         } catch (Exception e) {
             Log.e(TAG, "onDestroy cleanup error: " + e.getMessage(), e);

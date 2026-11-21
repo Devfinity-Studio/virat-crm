@@ -11,6 +11,7 @@ const publicPaths = [
   "/data-deletion",
   "/api/auth/login",
   "/api/auth/logout",
+  "/api/auth/token",
   "/api/trpc",
   "/api/rest",
   "/api/health",
