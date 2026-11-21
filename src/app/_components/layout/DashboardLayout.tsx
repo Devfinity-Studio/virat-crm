@@ -27,7 +27,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("virat_auth_token");
       localStorage.removeItem("virat_auth_user_id");
     }
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "Manual sign out from navigation menu" }),
+    });
     router.push("/login");
   };
 

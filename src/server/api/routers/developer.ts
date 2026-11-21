@@ -2,8 +2,10 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { systemSettings } from "@/server/db/schema/systemSettings";
 import { users } from "@/server/db/schema/users";
-import { eq } from "drizzle-orm";
+import { systemAuditLogs } from "@/server/db/schema/systemAuditLogs";
+import { eq, and, or, ilike, desc, lt } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { logSystemEvent } from "@/server/lib/audit-logger";
 
 // Local Developer-only middleware
 const developerProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -66,6 +68,18 @@ export const developerRouter = createTRPCRouter({
         .where(eq(systemSettings.id, "global"))
         .returning();
 
+      await logSystemEvent({
+        eventType: "DEVELOPER_ACTION",
+        action: "System Configuration Updated",
+        status: "INFO",
+        userId: ctx.dbUser.id,
+        userName: `${ctx.dbUser.firstName} ${ctx.dbUser.lastName}`,
+        userEmail: ctx.dbUser.email,
+        userRole: ctx.dbUser.role,
+        details: `Updated system controls (ForceUpdate: ${input.forceUpdateEnabled ?? "unchanged"}, Locked: ${input.isSystemLocked}, ReadOnly: ${input.isReadOnly})`,
+        metadata: input,
+      });
+
       return updated;
     }),
 
@@ -89,6 +103,114 @@ export const developerRouter = createTRPCRouter({
 
       // Perform a clean database delete
       await ctx.db.delete(users).where(eq(users.id, input.userId));
+
+      await logSystemEvent({
+        eventType: "DEVELOPER_ACTION",
+        action: "User Account Purged",
+        status: "WARNING",
+        userId: ctx.dbUser.id,
+        userName: `${ctx.dbUser.firstName} ${ctx.dbUser.lastName}`,
+        userEmail: ctx.dbUser.email,
+        userRole: ctx.dbUser.role,
+        details: `Permanently purged user ${targetUser.firstName} ${targetUser.lastName} (${targetUser.employeeCode}, ${targetUser.email})`,
+        metadata: {
+          targetUserId: targetUser.id,
+          targetEmployeeCode: targetUser.employeeCode,
+          targetUserEmail: targetUser.email,
+        },
+      });
+
+      return { success: true };
+    }),
+
+  getAuditLogs: developerProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(200).default(50),
+        eventType: z
+          .enum([
+            "ALL",
+            "LOGIN_SUCCESS",
+            "LOGIN_FAILURE",
+            "LOGOUT",
+            "LOCATION_ALERT",
+            "SYSTEM_ERROR",
+            "DEVELOPER_ACTION",
+          ])
+          .default("ALL"),
+        status: z
+          .enum(["ALL", "SUCCESS", "FAILURE", "WARNING", "INFO"])
+          .default("ALL"),
+        search: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { limit, eventType, status, search } = input;
+
+      const conditions = [];
+
+      if (eventType !== "ALL") {
+        conditions.push(eq(systemAuditLogs.eventType, eventType));
+      }
+
+      if (status !== "ALL") {
+        conditions.push(eq(systemAuditLogs.status, status));
+      }
+
+      if (search && search.trim().length > 0) {
+        const q = `%${search.trim().toLowerCase()}%`;
+        conditions.push(
+          or(
+            ilike(systemAuditLogs.userName, q),
+            ilike(systemAuditLogs.userEmail, q),
+            ilike(systemAuditLogs.employeeCode, q),
+            ilike(systemAuditLogs.action, q),
+            ilike(systemAuditLogs.details, q),
+            ilike(systemAuditLogs.ipAddress, q),
+          ),
+        );
+      }
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const logs = await ctx.db
+        .select()
+        .from(systemAuditLogs)
+        .where(whereClause)
+        .orderBy(desc(systemAuditLogs.createdAt))
+        .limit(limit);
+
+      return logs;
+    }),
+
+  clearAuditLogs: developerProcedure
+    .input(
+      z.object({
+        olderThanDays: z.number().min(0).default(0),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.olderThanDays === 0) {
+        await ctx.db.delete(systemAuditLogs);
+      } else {
+        const cutoff = new Date(
+          Date.now() - input.olderThanDays * 24 * 60 * 60 * 1000,
+        );
+        await ctx.db
+          .delete(systemAuditLogs)
+          .where(lt(systemAuditLogs.createdAt, cutoff));
+      }
+
+      await logSystemEvent({
+        eventType: "DEVELOPER_ACTION",
+        action: "Audit Logs Cleared",
+        status: "WARNING",
+        userId: ctx.dbUser.id,
+        userName: `${ctx.dbUser.firstName} ${ctx.dbUser.lastName}`,
+        userEmail: ctx.dbUser.email,
+        userRole: ctx.dbUser.role,
+        details: `Purged audit logs ${input.olderThanDays === 0 ? "completely" : `older than ${input.olderThanDays} days`}`,
+      });
 
       return { success: true };
     }),

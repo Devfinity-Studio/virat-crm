@@ -14,7 +14,11 @@ export function SuspendedView() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      const res = await fetch("/api/auth/logout", { method: "POST" });
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Signed out from account suspended screen" }),
+      });
       if (res.ok) {
         toast.success("Successfully logged out");
         router.push("/login");

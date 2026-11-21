@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, getSessionFromHeaders, logout } from "@/server/lib/auth";
+import { getSession, getSessionFromHeaders } from "@/server/lib/auth";
 import { db } from "@/server/db";
 import { users, employeeTrackingStatus, adminAlerts } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { notifyAdmins } from "@/server/lib/monitoring";
+import { logSystemEvent, extractClientInfo } from "@/server/lib/audit-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,23 @@ export async function POST(request: NextRequest) {
 
     // 3. Dispatch push notifications and in-app alerts to all admins
     await notifyAdmins(title, message);
+
+    // 4. Log to developer audit log
+    const { ipAddress, userAgent } = extractClientInfo(request.headers);
+    await logSystemEvent({
+      eventType: "LOCATION_ALERT",
+      action: "Location Emergency Revoked",
+      status: "WARNING",
+      userId: employee.id,
+      userName: `${employee.firstName} ${employee.lastName}`,
+      userEmail: employee.email,
+      userRole: employee.role,
+      employeeCode: employee.employeeCode,
+      details: reason,
+      ipAddress,
+      userAgent,
+      metadata: { reason, payload },
+    });
 
     // Note: Do NOT log out or destroy the session. A temporary location service
     // issue should never automatically log out the user.

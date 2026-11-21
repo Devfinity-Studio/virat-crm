@@ -62,3 +62,8 @@ export {
   fieldSupportReportItemsRelations,
 } from "./fieldSupportReports";
 export { userDocuments, userDocumentsRelations } from "./userDocuments";
+export {
+  systemAuditLogs,
+  systemAuditLogsRelations,
+} from "./systemAuditLogs";
+
