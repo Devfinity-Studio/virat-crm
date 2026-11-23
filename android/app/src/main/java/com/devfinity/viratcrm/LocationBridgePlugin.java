@@ -39,7 +39,7 @@ public class LocationBridgePlugin extends Plugin {
             JSObject ret = new JSObject();
             ret.put("name", "VBPL");
             ret.put("packageId", context.getPackageName());
-            ret.put("versionName", pInfo.versionName != null ? pInfo.versionName : "1.1.4");
+            ret.put("versionName", pInfo.versionName != null ? pInfo.versionName : "1.1.5");
             ret.put("versionCode", buildNumber);
             call.resolve(ret);
         } catch (Exception e) {
