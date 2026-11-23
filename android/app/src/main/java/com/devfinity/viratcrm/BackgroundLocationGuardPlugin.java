@@ -275,7 +275,7 @@ public class BackgroundLocationGuardPlugin extends Plugin {
             JSObject ret = new JSObject();
             ret.put("name", "VBPL");
             ret.put("packageId", context.getPackageName());
-            ret.put("versionName", pInfo.versionName != null ? pInfo.versionName : "1.1.2");
+            ret.put("versionName", pInfo.versionName != null ? pInfo.versionName : "1.1.3");
             ret.put("versionCode", buildNumber);
             call.resolve(ret);
         } catch (Exception e) {
