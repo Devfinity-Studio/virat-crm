@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Suspense } from "react";
 import Link from "next/link";
 import { unlockSession, clearBufferedLocations } from "@/lib/offline-location-queue";
+import { BackgroundLocationGuard } from "@/lib/background-location-guard";
+import { Capacitor } from "@capacitor/core";
 
 function LoginContent() {
   const [employeeCode, setEmployeeCode] = useState("");
@@ -57,8 +59,22 @@ function LoginContent() {
         // Clear all lockout state and offline grace period timers on fresh login
         unlockSession();
         await clearBufferedLocations();
+        if (Capacitor.isNativePlatform()) {
+          try {
+            await BackgroundLocationGuard.clearForceLogout();
+          } catch (e) {
+            console.warn("Failed to clear native force logout:", e);
+          }
+        }
         if (data.token) {
           localStorage.setItem("virat_auth_token", data.token);
+          if (Capacitor.isNativePlatform()) {
+            try {
+              await BackgroundLocationGuard.updateAuthToken({ token: data.token });
+            } catch (e) {
+              console.warn("Failed to sync auth token to native layer:", e);
+            }
+          }
         }
         if (data.user?.id) {
           localStorage.setItem("virat_auth_user_id", data.user.id);

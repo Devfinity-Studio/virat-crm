@@ -78,6 +78,10 @@ public class LocationService extends Service {
         try {
             dbHelper = LocationDatabaseHelper.getInstance(this);
 
+            // Clean up any stale records from previous offline runs so they don't immediately trigger a 20-min cutoff violation
+            long cutoff = System.currentTimeMillis() - CUTOFF_20_MINUTES_MS;
+            dbHelper.purgeOlderThan(cutoff);
+
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             if (pm != null) {
                 wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ViratCRM:LocationWakeLock");
