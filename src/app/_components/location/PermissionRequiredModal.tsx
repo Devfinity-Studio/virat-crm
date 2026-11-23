@@ -216,13 +216,12 @@ export function PermissionRequiredModal({ isOpen, onGranted }: Props) {
         <div className="mt-5 grid grid-cols-3 gap-2">
           {/* Step 1 Pill */}
           <div
-            className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center border transition-all ${
-              status.fineLocation && status.notifications
-                ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
-                : currentStep === 1
-                  ? "border-indigo-400 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20"
-                  : "border-slate-100 bg-slate-50 text-slate-400"
-            }`}
+            className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center border transition-all ${status.fineLocation && status.notifications
+              ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
+              : currentStep === 1
+                ? "border-indigo-400 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20"
+                : "border-slate-100 bg-slate-50 text-slate-400"
+              }`}
           >
             <div className="flex items-center gap-1">
               {status.fineLocation && status.notifications ? (
@@ -236,13 +235,12 @@ export function PermissionRequiredModal({ isOpen, onGranted }: Props) {
 
           {/* Step 2 Pill */}
           <div
-            className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center border transition-all ${
-              status.backgroundLocation
-                ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
-                : currentStep === 2
-                  ? "border-indigo-400 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20"
-                  : "border-slate-100 bg-slate-50 text-slate-400"
-            }`}
+            className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center border transition-all ${status.backgroundLocation
+              ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
+              : currentStep === 2
+                ? "border-indigo-400 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20"
+                : "border-slate-100 bg-slate-50 text-slate-400"
+              }`}
           >
             <div className="flex items-center gap-1">
               {status.backgroundLocation ? (
@@ -256,13 +254,12 @@ export function PermissionRequiredModal({ isOpen, onGranted }: Props) {
 
           {/* Step 3 Pill */}
           <div
-            className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center border transition-all ${
-              status.batteryUnrestricted
-                ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
-                : currentStep === 3
-                  ? "border-indigo-400 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20"
-                  : "border-slate-100 bg-slate-50 text-slate-400"
-            }`}
+            className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center border transition-all ${status.batteryUnrestricted
+              ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
+              : currentStep === 3
+                ? "border-indigo-400 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20"
+                : "border-slate-100 bg-slate-50 text-slate-400"
+              }`}
           >
             <div className="flex items-center gap-1">
               {status.batteryUnrestricted ? (
@@ -467,11 +464,10 @@ export function PermissionRequiredModal({ isOpen, onGranted }: Props) {
                         key={oem}
                         type="button"
                         onClick={() => setActiveOEM(oem)}
-                        className={`rounded-lg py-1 text-[10px] font-bold capitalize transition-all ${
-                          activeOEM === oem
-                            ? "bg-slate-900 text-white shadow-xs"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        }`}
+                        className={`rounded-lg py-1 text-[10px] font-bold capitalize transition-all ${activeOEM === oem
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
                       >
                         {oem}
                       </button>
