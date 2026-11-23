@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
 import {
@@ -42,19 +42,47 @@ export function LocationTrackerProvider({
   const [lockoutMsg, setLockoutMsg] = useState("");
 
   const updateStatusMutation = api.location.updateTrackingStatus.useMutation();
+  const updateStatusRef = useRef(updateStatusMutation.mutate);
+  updateStatusRef.current = updateStatusMutation.mutate;
+
+  const lastUpdateRef = useRef<{ lat: number; lng: number; time: number }>({
+    lat: 0,
+    lng: 0,
+    time: 0,
+  });
 
   const handlePositionUpdate = useCallback(
     (pos: LocationCoordinates) => {
-      if (user?.isActive) {
-        updateStatusMutation.mutate({
-          locationPermissionStatus: "ALWAYS",
-          isOnline: true,
-          latitude: pos.latitude,
-          longitude: pos.longitude,
-        });
+      // Only track if user is active and on the field (Employee)
+      if (!user?.isActive || user.role !== "Employee") return;
+
+      const now = Date.now();
+      const prev = lastUpdateRef.current;
+      const elapsed = now - prev.time;
+
+      // Throttle: Max once every 30 seconds unless moved > 25 meters (~0.00025 deg)
+      const latDiff = Math.abs(pos.latitude - prev.lat);
+      const lngDiff = Math.abs(pos.longitude - prev.lng);
+      const movedNoticeably = latDiff > 0.00025 || lngDiff > 0.00025;
+
+      if (elapsed < 30000 && !movedNoticeably && prev.time !== 0) {
+        return;
       }
+
+      lastUpdateRef.current = {
+        lat: pos.latitude,
+        lng: pos.longitude,
+        time: now,
+      };
+
+      updateStatusRef.current({
+        locationPermissionStatus: "ALWAYS",
+        isOnline: true,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+      });
     },
-    [user?.isActive, updateStatusMutation],
+    [user?.isActive, user?.role],
   );
 
   useEffect(() => {
