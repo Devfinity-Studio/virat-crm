@@ -84,7 +84,7 @@ export function LocationTrackerProvider({
             router.push("/login");
             return;
           }
-        } catch {}
+        } catch { }
       })();
     }
 
