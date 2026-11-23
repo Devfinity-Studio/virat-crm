@@ -186,12 +186,42 @@ public class BackgroundLocationGuardPlugin extends Plugin {
             if (token != null && !token.isEmpty()) {
                 Context context = getContext();
                 SharedPreferences prefs = context.getSharedPreferences("virat_prefs", Context.MODE_PRIVATE);
-                prefs.edit().putString("auth_token", token).putLong("last_token_update", System.currentTimeMillis()).apply();
-                Log.d(TAG, "Auth token updated in native SharedPreferences.");
+                prefs.edit()
+                    .putString("auth_token", token)
+                    .putLong("last_token_update", System.currentTimeMillis())
+                    .putBoolean("session_force_logged_out", false)
+                    .remove("lockout_reason")
+                    .putLong("last_successful_sync", System.currentTimeMillis())
+                    .apply();
+                Log.d(TAG, "Auth token updated in native SharedPreferences & lockout cleared.");
             }
             call.resolve();
         } catch (Exception e) {
             call.reject("Failed to update auth token: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void clearForceLogout(PluginCall call) {
+        try {
+            Context context = getContext();
+            SharedPreferences prefs = context.getSharedPreferences("virat_prefs", Context.MODE_PRIVATE);
+            prefs.edit()
+                .putBoolean("session_force_logged_out", false)
+                .remove("lockout_reason")
+                .putLong("last_successful_sync", System.currentTimeMillis())
+                .apply();
+
+            // Purge any leftover or stale records older than 20 minutes from SQLite
+            LocationDatabaseHelper dbHelper = LocationDatabaseHelper.getInstance(context);
+            long cutoff = System.currentTimeMillis() - (20 * 60 * 1000L);
+            int purged = dbHelper.purgeOlderThan(cutoff);
+            Log.i(TAG, "clearForceLogout executed: lockout reset, purged " + purged + " stale records.");
+
+            call.resolve();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to clear force logout: " + e.getMessage());
+            call.reject("Failed to clear force logout: " + e.getMessage());
         }
     }
 

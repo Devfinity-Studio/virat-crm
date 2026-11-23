@@ -68,6 +68,10 @@ export function LocationTrackerProvider({
   useEffect(() => {
     if (!user || !user.isActive) return;
 
+    // A valid authenticated session clears any stale local lockout flag
+    setLockedOutState(false);
+    unlockSession();
+
     // Check if native 20-minute cutoff forced a logout
     if (Capacitor.isNativePlatform()) {
       void (async () => {
@@ -86,12 +90,6 @@ export function LocationTrackerProvider({
           }
         } catch { }
       })();
-    }
-
-    // A valid authenticated session clears any stale local lockout flag
-    if (user.role !== "Employee" || user.isActive) {
-      setLockedOutState(false);
-      unlockSession();
     }
 
     // Ensure auth token is cached locally and synced to native SharedPreferences

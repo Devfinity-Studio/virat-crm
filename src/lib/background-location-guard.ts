@@ -20,6 +20,7 @@ export interface BackgroundLocationGuardPluginType {
   openAppSettings(): Promise<void>;
   requestUnrestrictedBattery(): Promise<void>;
   updateAuthToken(options: { token: string }): Promise<void>;
+  clearForceLogout(): Promise<void>;
   startTracking(options?: { token?: string }): Promise<void>;
   stopTracking(): Promise<void>;
   checkForceLogout(): Promise<ForceLogoutStatus>;
