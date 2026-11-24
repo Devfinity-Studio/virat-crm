@@ -1,5 +1,17 @@
 import React from "react";
-import { format } from "date-fns";
+import { VIRAT_LOGO_BASE64 } from "@/lib/constants/logo-base64";
+
+function formatReportDate(d: string | Date): string {
+  const dateObj = typeof d === "string" ? new Date(d) : d;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  })
+    .format(dateObj)
+    .replace(/ /g, "-");
+}
 
 export function DailyReportPDFTemplate({
   dateStr,
@@ -27,11 +39,8 @@ export function DailyReportPDFTemplate({
       style={{
         width: "210mm",
         minHeight: "297mm",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        zIndex: -9999,
-        pointerEvents: "none",
+        boxSizing: "border-box",
+        backgroundColor: "#ffffff",
       }}
     >
       {/* Main Border Container */}
@@ -40,12 +49,11 @@ export function DailyReportPDFTemplate({
         <div className="flex border-b-[2px] border-black pb-2 items-start p-2">
           <div className="w-[120px] pt-1">
             <img
-              src="/logo-removebg-preview.png"
+              src={VIRAT_LOGO_BASE64}
               alt="Logo"
               width={100}
               height={60}
               className="object-contain"
-              crossOrigin="anonymous"
             />
           </div>
           <div className="flex-1 text-center pt-2">
@@ -112,7 +120,7 @@ export function DailyReportPDFTemplate({
               <tr key={index} className="h-[55px]">
                 <td className="border border-black p-2">{index + 1}</td>
                 <td className="border border-black p-2 text-xs font-semibold">
-                  {report ? format(new Date(report.reportDate), "dd-MMM-yyyy") : ""}
+                  {report ? formatReportDate(report.reportDate) : ""}
                 </td>
                 <td className="border border-black p-2 text-xs font-semibold">
                   {report?.timeFrom || ""}

@@ -95,7 +95,9 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
   });
 
   const handlePrintReport = (report: any) => {
-    const reportDateStr = format(new Date(report.reportDate), "yyyy-MM-dd");
+    const reportDateStr = new Date(report.reportDate).toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
     const empId = report.user?.id ?? report.userId;
     const empName = report.user
       ? `${report.user.firstName ?? ""} ${report.user.lastName ?? ""}`.trim()
@@ -254,7 +256,11 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
               className="h-[52px] rounded-xl gap-2 font-bold shadow-[0_4px_0_0_rgba(15,23,42,1)]"
               disabled={!printEmployeeId}
               onClick={() => {
-                setDefaultPrintDate(format(new Date(), "yyyy-MM-dd"));
+                setDefaultPrintDate(
+                  new Date().toLocaleDateString("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                  }),
+                );
                 setIsPrintDialogOpen(true);
               }}
             >
@@ -270,7 +276,11 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
             onClick={() => {
               setPrintEmployeeId(me.id);
               setPrintEmployeeName(`${me.firstName ?? ""} ${me.lastName ?? ""}`.trim() || "My Report");
-              setDefaultPrintDate(format(new Date(), "yyyy-MM-dd"));
+              setDefaultPrintDate(
+                new Date().toLocaleDateString("en-CA", {
+                  timeZone: "Asia/Kolkata",
+                }),
+              );
               setIsPrintDialogOpen(true);
             }}
           >

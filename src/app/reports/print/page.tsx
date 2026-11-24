@@ -1,9 +1,20 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/server/lib/auth";
 import { api } from "@/trpc/server";
-import { format } from "date-fns";
-import Image from "next/image";
+import { VIRAT_LOGO_BASE64 } from "@/lib/constants/logo-base64";
 import { PrintToolbar } from "./PrintButton";
+
+function formatReportDate(d: string | Date): string {
+  const dateObj = typeof d === "string" ? new Date(d) : d;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  })
+    .format(dateObj)
+    .replace(/ /g, "-");
+}
 
 export default async function DailyReportPrintView({
   searchParams,
@@ -15,7 +26,9 @@ export default async function DailyReportPrintView({
 
   const resolvedSearchParams = await searchParams;
   const isFilled = resolvedSearchParams.mode === "filled";
-  const dateStr = resolvedSearchParams.date ?? format(new Date(), "yyyy-MM-dd");
+  const dateStr =
+    resolvedSearchParams.date ??
+    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const userId = resolvedSearchParams.userId ?? session.userId;
 
   let targetUser: any = null;
@@ -30,9 +43,12 @@ export default async function DailyReportPrintView({
       limit: 100,
     });
 
-    const targetDateString = format(new Date(dateStr), "yyyy-MM-dd");
+    const targetDateString = dateStr.slice(0, 10);
     daysReports = reports.filter(
-      (r) => format(new Date(r.reportDate), "yyyy-MM-dd") === targetDateString,
+      (r) =>
+        new Date(r.reportDate).toLocaleDateString("en-CA", {
+          timeZone: "Asia/Kolkata",
+        }) === targetDateString,
     );
 
     targetUser = myProfile;
@@ -77,7 +93,7 @@ export default async function DailyReportPrintView({
           <div className="flex border-b-[2px] border-black pb-2 items-start p-2">
             <div className="w-[120px] pt-1">
               <img
-                src="/logo-removebg-preview.png"
+                src={VIRAT_LOGO_BASE64}
                 alt="Logo"
                 width={100}
                 height={60}
@@ -154,7 +170,7 @@ export default async function DailyReportPrintView({
                 <tr key={index} className="h-[58px]">
                   <td className="border border-black p-2">{index + 1}</td>
                   <td className="border border-black p-2 text-xs font-semibold">
-                    {report ? format(new Date(report.reportDate), "dd-MMM-yyyy") : ""}
+                    {report ? formatReportDate(report.reportDate) : ""}
                   </td>
                   <td className="border border-black p-2 text-xs font-semibold">
                     {report?.timeFrom || ""}
