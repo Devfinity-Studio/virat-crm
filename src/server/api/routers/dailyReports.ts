@@ -9,6 +9,15 @@ import { eq, and, desc, sql, inArray, gte, lte, ilike, exists, or, type SQL } fr
 import { TRPCError } from "@trpc/server";
 import { resolveReportTargetUsers } from "@/server/lib/reports";
 
+function toLocalDateString(val: string | Date): string {
+  if (typeof val === "string") {
+    const match = val.match(/^\d{4}-\d{2}-\d{2}/);
+    if (match) return match[0];
+  }
+  const d = typeof val === "string" ? new Date(val) : val;
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
+
 export const dailyReportsRouter = createTRPCRouter({
   submitReport: featureProtectedProcedure("reports")
     .input(
@@ -90,13 +99,13 @@ export const dailyReportsRouter = createTRPCRouter({
     .input(
       z.object({
         scope: z.enum(["all", "individual", "team", "management", "branch"]).default("all"),
-        targetId: z.string().uuid().optional(),
+        targetId: z.string().uuid().optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
         branchId: z.number().optional(),
         search: z.string().optional(),
-        limit: z.number().min(1).max(200).default(50),
+        limit: z.number().min(1).max(1000).default(50),
         offset: z.number().min(0).default(0),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
+        startDate: z.union([z.date(), z.string()]).optional(),
+        endDate: z.union([z.date(), z.string()]).optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -145,17 +154,15 @@ export const dailyReportsRouter = createTRPCRouter({
         // If scope === "all" or no targetId/branchId/individual, shows all reports!
       }
 
-      // 2. Date filters
+      // 2. Date filters (in Asia/Kolkata timezone)
       if (input.startDate) {
-        const startOfDay = new Date(input.startDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        filters.push(gte(dailyReports.reportDate, startOfDay));
+        const startStr = toLocalDateString(input.startDate);
+        filters.push(sql`(${dailyReports.reportDate} AT TIME ZONE 'Asia/Kolkata')::date >= ${startStr}::date`);
       }
 
       if (input.endDate) {
-        const endOfDay = new Date(input.endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        filters.push(lte(dailyReports.reportDate, endOfDay));
+        const endStr = toLocalDateString(input.endDate);
+        filters.push(sql`(${dailyReports.reportDate} AT TIME ZONE 'Asia/Kolkata')::date <= ${endStr}::date`);
       }
 
       // 3. Search query filter
@@ -214,6 +221,7 @@ export const dailyReportsRouter = createTRPCRouter({
               firstName: true,
               lastName: true,
               employeeCode: true,
+              role: true,
             },
           },
           branch: {
@@ -236,8 +244,8 @@ export const dailyReportsRouter = createTRPCRouter({
     .input(
       z
         .object({
-          date: z.date().optional(),
-          limit: z.number().min(1).max(100).default(50),
+          date: z.union([z.date(), z.string()]).optional(),
+          limit: z.number().min(1).max(200).default(50),
           offset: z.number().min(0).default(0),
         })
         .optional(),
@@ -249,13 +257,9 @@ export const dailyReportsRouter = createTRPCRouter({
       const filters: SQL[] = [eq(dailyReports.branchId, dbUser.branchId!)];
 
       if (input?.date) {
-        const startOfDay = new Date(input.date);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(input.date);
-        endOfDay.setHours(23, 59, 59, 999);
-
+        const dateStr = toLocalDateString(input.date);
         filters.push(
-          sql`${dailyReports.reportDate} >= ${startOfDay} AND ${dailyReports.reportDate} <= ${endOfDay}`,
+          sql`(${dailyReports.reportDate} AT TIME ZONE 'Asia/Kolkata')::date = ${dateStr}::date`,
         );
       }
 

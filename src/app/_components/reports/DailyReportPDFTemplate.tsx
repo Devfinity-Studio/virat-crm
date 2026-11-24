@@ -1,5 +1,4 @@
 import React from "react";
-import Image from "next/image";
 import { format } from "date-fns";
 
 export function DailyReportPDFTemplate({
@@ -13,6 +12,8 @@ export function DailyReportPDFTemplate({
   branchName: string;
   reports: any[];
 }) {
+  const reportUser = reports[0]?.user ?? user;
+  const reportBranch = reports[0]?.branch?.name || branchName || "";
   const reportRows = [...reports];
   while (reportRows.length < 10) {
     reportRows.push(null as any);
@@ -26,9 +27,11 @@ export function DailyReportPDFTemplate({
       style={{
         width: "210mm",
         minHeight: "297mm",
-        position: "absolute",
-        left: "-9999px",
+        position: "fixed",
         top: 0,
+        left: 0,
+        zIndex: -9999,
+        pointerEvents: "none",
       }}
     >
       {/* Main Border Container */}
@@ -36,13 +39,13 @@ export function DailyReportPDFTemplate({
         {/* Header Row */}
         <div className="flex border-b-[2px] border-black pb-2 items-start p-2">
           <div className="w-[120px] pt-1">
-            <Image
+            <img
               src="/logo-removebg-preview.png"
               alt="Logo"
               width={100}
               height={60}
               className="object-contain"
-              priority
+              crossOrigin="anonymous"
             />
           </div>
           <div className="flex-1 text-center pt-2">
@@ -57,24 +60,24 @@ export function DailyReportPDFTemplate({
         <div className="px-2 py-3 text-sm font-bold flex flex-col gap-2 border-b-[2px] border-black pb-4">
           <div className="flex items-end gap-2">
             <span className="w-16">NAME:</span>
-            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase">
-              {user?.firstName} {user?.lastName}
+            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
+              {reportUser?.firstName} {reportUser?.lastName}
             </div>
           </div>
           <div className="flex items-end gap-2">
             <span className="w-16">DEG:</span>
-            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 max-w-[200px] font-semibold uppercase">
-              {user?.role}
+            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 max-w-[200px] font-semibold uppercase min-h-[22px]">
+              {reportUser?.role || user?.role || ""}
             </div>
             <span className="ml-4">BRANCH:</span>
-            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase">
-              {branchName || ""}
+            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
+              {reportBranch}
             </div>
           </div>
           <div className="flex items-end gap-2">
             <span className="w-20">E CODE:</span>
-            <div className="w-[150px] border-b-[1.5px] border-black pb-0.5 font-semibold uppercase">
-              {user?.employeeCode}
+            <div className="w-[150px] border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
+              {reportUser?.employeeCode || user?.employeeCode || ""}
             </div>
           </div>
         </div>
