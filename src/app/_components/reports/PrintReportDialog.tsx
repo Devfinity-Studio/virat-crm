@@ -58,11 +58,11 @@ export function PrintReportDialog({
 
     try {
       const reports = await utils.dailyReports.listScopedReports.fetch({
-        scope: "individual",
-        targetId: employeeId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        limit: 1000,
+        scope: employeeId ? "individual" : "all",
+        targetId: employeeId && employeeId.length > 0 ? employeeId : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        limit: 500,
       });
 
       if (!reports || reports.length === 0) {
@@ -71,9 +71,11 @@ export function PrintReportDialog({
         return;
       }
 
-      // Group reports by date string (YYYY-MM-DD)
+      // Group reports by date string (YYYY-MM-DD in Asia/Kolkata)
       const reportsByDate = reports.reduce((acc, report) => {
-        const d = format(new Date(report.reportDate), "yyyy-MM-dd");
+        const d = new Date(report.reportDate).toLocaleDateString("en-CA", {
+          timeZone: "Asia/Kolkata",
+        });
         if (!acc[d]) acc[d] = [];
         acc[d].push(report);
         return acc;
@@ -81,8 +83,8 @@ export function PrintReportDialog({
 
       setFetchedReportsByDate(reportsByDate);
 
-      // Wait a frame for React to render the hidden templates
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Wait for React to render the hidden templates
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
       const zip = new JSZip();
       const dates = Object.keys(reportsByDate).sort();
@@ -96,7 +98,12 @@ export function PrintReportDialog({
         const element = document.getElementById(`pdf-template-${dateStr}`);
         if (!element) continue;
 
-        const canvas = await html2canvas(element, { scale: 2 });
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+        });
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
