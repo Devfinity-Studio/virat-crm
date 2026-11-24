@@ -45,8 +45,10 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
 
   const [printEmployeeId, setPrintEmployeeId] = useState<string>("");
   const [printEmployeeName, setPrintEmployeeName] = useState<string>("");
+  const [defaultPrintDate, setDefaultPrintDate] = useState<string>("");
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
 
+  const { data: me } = api.users.getMe.useQuery();
   const { data: usersForPrint } = api.users.getUsersForDropdown.useQuery(undefined, {
     enabled: isManager || isAdmin,
   });
@@ -91,6 +93,19 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
     const codeMatch = (report.user?.employeeCode ?? "").toLowerCase().includes(q);
     return contentMatch || customerMatch || userMatch || codeMatch;
   });
+
+  const handlePrintReport = (report: any) => {
+    const reportDateStr = format(new Date(report.reportDate), "yyyy-MM-dd");
+    const empId = report.user?.id ?? report.userId;
+    const empName = report.user
+      ? `${report.user.firstName ?? ""} ${report.user.lastName ?? ""}`.trim()
+      : "Employee";
+
+    setPrintEmployeeId(empId);
+    setPrintEmployeeName(empName || "Employee");
+    setDefaultPrintDate(reportDateStr);
+    setIsPrintDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6 pb-24">
@@ -238,12 +253,30 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
             <Button 
               className="h-[52px] rounded-xl gap-2 font-bold shadow-[0_4px_0_0_rgba(15,23,42,1)]"
               disabled={!printEmployeeId}
-              onClick={() => setIsPrintDialogOpen(true)}
+              onClick={() => {
+                setDefaultPrintDate(format(new Date(), "yyyy-MM-dd"));
+                setIsPrintDialogOpen(true);
+              }}
             >
               <Printer className="h-4 w-4" />
               Print
             </Button>
           </div>
+        )}
+
+        {!isManager && !isAdmin && me && (
+          <Button 
+            className="h-[52px] rounded-xl gap-2 font-bold shadow-[0_4px_0_0_rgba(15,23,42,1)] bg-slate-900 text-white hover:bg-slate-800"
+            onClick={() => {
+              setPrintEmployeeId(me.id);
+              setPrintEmployeeName(`${me.firstName ?? ""} ${me.lastName ?? ""}`.trim() || "My Report");
+              setDefaultPrintDate(format(new Date(), "yyyy-MM-dd"));
+              setIsPrintDialogOpen(true);
+            }}
+          >
+            <Printer className="h-4 w-4" />
+            Print My Reports
+          </Button>
         )}
       </div>
 
@@ -252,7 +285,8 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
         onOpenChange={setIsPrintDialogOpen}
         employeeId={printEmployeeId}
         employeeName={printEmployeeName}
-        employeeData={usersForPrint?.find((x: any) => x.id === printEmployeeId)}
+        employeeData={usersForPrint?.find((x: any) => x.id === printEmployeeId) ?? me}
+        defaultDate={defaultPrintDate}
       />
 
       <div className="space-y-4">
@@ -287,11 +321,24 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
 
                         {(scope === "all" || scope === "management" || scope === "branch" || isAdmin || isManager) && report.user && (
                           <div className="flex flex-col gap-1 text-sm text-slate-700 bg-slate-100 p-2.5 rounded-xl font-bold border-2 border-slate-200/50">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-indigo-500 shrink-0" />
-                              <span className="truncate">
-                                {report.user.firstName} {report.user.lastName}
-                              </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <User className="h-4 w-4 text-indigo-500 shrink-0" />
+                                <span className="truncate">
+                                  {report.user.firstName} {report.user.lastName}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePrintReport(report);
+                                }}
+                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-600 border border-slate-200 shadow-sm hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 active:scale-95 transition-all shrink-0"
+                                title={`Print report for ${report.user.firstName} ${report.user.lastName}`}
+                              >
+                                <Printer className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                             <div className="flex items-center justify-between text-[10px] text-slate-500 pl-6">
                               {report.user.employeeCode && (
@@ -342,16 +389,28 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
                         </div>
                       </div>
 
-                      <div className="mt-6 flex items-center justify-between border-t-2 border-slate-100 pt-4">
+                      <div className="mt-6 flex flex-wrap items-center justify-between border-t-2 border-slate-100 pt-4 gap-2">
                         <div className="text-[11px] font-bold text-slate-400 uppercase">
                           Submitted {format(new Date(report.createdAt), "hh:mm a")}
                         </div>
-                        <button
-                          onClick={() => setSelectedReport(report)}
-                          className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-[11px] font-black tracking-tight text-blue-600 uppercase hover:bg-blue-100 transition-colors"
-                        >
-                          Full History <ArrowRight className="h-3.5 w-3.5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handlePrintReport(report)}
+                            className="flex items-center gap-1.5 rounded-lg border-2 border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 transition-colors shadow-sm"
+                            title="Print daily report for this employee"
+                          >
+                            <Printer className="h-3.5 w-3.5 text-blue-600" />
+                            <span>Print Report</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedReport(report)}
+                            className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-[11px] font-black tracking-tight text-blue-600 uppercase hover:bg-blue-100 transition-colors"
+                          >
+                            Full History <ArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
