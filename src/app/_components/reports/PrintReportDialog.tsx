@@ -21,6 +21,130 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { DailyReportPDFTemplate } from "./DailyReportPDFTemplate";
 
+async function captureReportCanvas(element: HTMLElement) {
+  return await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: "#ffffff",
+    logging: false,
+    onclone: (clonedDoc) => {
+      // 1. Remove all style/link tags in clonedDoc that contain Tailwind v4 oklch rules
+      const styleTags = clonedDoc.querySelectorAll(
+        "style, link[rel='stylesheet']",
+      );
+      styleTags.forEach((tag) => tag.remove());
+
+      // 2. Inject clean, standard print styles for the template (NO oklch)
+      const printStyle = clonedDoc.createElement("style");
+      printStyle.textContent = `
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+        .pdf-page {
+          width: 210mm;
+          min-height: 297mm;
+          padding: 10mm;
+          background-color: #ffffff;
+          color: #000000;
+          box-sizing: border-box;
+        }
+        .pdf-container {
+          border: 2px solid #000000;
+          min-height: 275mm;
+          display: flex;
+          flex-direction: column;
+          box-sizing: border-box;
+        }
+        .pdf-header {
+          display: flex;
+          border-bottom: 2px solid #000000;
+          padding: 8px;
+          align-items: flex-start;
+        }
+        .pdf-title {
+          flex: 1;
+          text-align: center;
+          padding-top: 8px;
+          font-size: 20px;
+          font-weight: 700;
+          color: #000000;
+        }
+        .pdf-user-details {
+          padding: 12px 8px 16px 8px;
+          font-size: 13px;
+          font-weight: 700;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          border-bottom: 2px solid #000000;
+          color: #000000;
+        }
+        .pdf-field-row {
+          display: flex;
+          align-items: flex-end;
+          gap: 8px;
+        }
+        .pdf-field-underline {
+          flex: 1;
+          border-bottom: 1.5px solid #000000;
+          padding-bottom: 2px;
+          font-weight: 600;
+          text-transform: uppercase;
+          min-height: 22px;
+          color: #000000;
+        }
+        .pdf-table {
+          width: 100%;
+          text-align: center;
+          font-size: 12px;
+          font-weight: 700;
+          border-collapse: collapse;
+          color: #000000;
+        }
+        .pdf-table th {
+          background-color: #cbd5e1 !important;
+          border: 1px solid #000000;
+          padding: 6px;
+          color: #000000;
+        }
+        .pdf-table td {
+          border: 1px solid #000000;
+          padding: 6px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #000000;
+        }
+        .pdf-table tr {
+          height: 52px;
+        }
+        .pdf-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-top: auto;
+          margin-bottom: 60px;
+          padding: 0 16px;
+          font-weight: 700;
+          font-size: 13px;
+          color: #000000;
+        }
+      `;
+      clonedDoc.head.appendChild(printStyle);
+
+      const staging = clonedDoc.getElementById("pdf-render-staging-container");
+      if (staging) {
+        staging.style.position = "static";
+        staging.style.left = "0";
+        staging.style.top = "0";
+      }
+    },
+  });
+}
+
 export function PrintReportDialog({
   open,
   onOpenChange,
@@ -116,24 +240,7 @@ export function PrintReportDialog({
           throw new Error("Unable to locate rendered report template");
         }
 
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-          onclone: (clonedDoc) => {
-            const staging = clonedDoc.getElementById(
-              "pdf-render-staging-container",
-            );
-            if (staging) {
-              staging.style.position = "static";
-              staging.style.left = "0";
-              staging.style.top = "0";
-            }
-          },
-        });
-
+        const canvas = await captureReportCanvas(element);
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -160,24 +267,7 @@ export function PrintReportDialog({
           const element = document.getElementById(`pdf-template-${dateStr}`);
           if (!element) continue;
 
-          const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: "#ffffff",
-            logging: false,
-            onclone: (clonedDoc) => {
-              const staging = clonedDoc.getElementById(
-                "pdf-render-staging-container",
-              );
-              if (staging) {
-                staging.style.position = "static";
-                staging.style.left = "0";
-                staging.style.top = "0";
-              }
-            },
-          });
-
+          const canvas = await captureReportCanvas(element);
           const imgData = canvas.toDataURL("image/png");
           const pdf = new jsPDF("p", "mm", "a4");
           const pdfWidth = pdf.internal.pageSize.getWidth();
