@@ -53,7 +53,21 @@ export const reportsRouter = createTRPCRouter({
         id: string;
       }[];
       const teamIds = rows.map((r) => String(r.id));
-      if (teamIds.length === 0) return [];
+      if (teamIds.length === 0) {
+        if (currentUser.branchId) {
+          return ctx.db.query.users.findMany({
+            where: eq(users.branchId, currentUser.branchId),
+            columns: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              employeeCode: true,
+            },
+          });
+        }
+        return [];
+      }
 
       return ctx.db.query.users.findMany({
         where: inArray(users.id, teamIds),
