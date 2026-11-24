@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/trpc/react";
-import { Loader2, Download } from "lucide-react";
+import { Loader2, Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -21,18 +21,28 @@ export function PrintReportDialog({
   employeeId,
   employeeName,
   employeeData,
+  defaultDate,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employeeId: string;
   employeeName: string;
   employeeData?: any;
+  defaultDate?: string;
 }) {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(defaultDate ?? "");
+  const [endDate, setEndDate] = useState(defaultDate ?? "");
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState("");
   const [fetchedReportsByDate, setFetchedReportsByDate] = useState<Record<string, any[]>>({});
+
+  useEffect(() => {
+    if (open) {
+      const initial = defaultDate ?? format(new Date(), "yyyy-MM-dd");
+      setStartDate(initial);
+      setEndDate(initial);
+    }
+  }, [open, defaultDate]);
 
   const utils = api.useUtils();
 
@@ -153,18 +163,33 @@ export function PrintReportDialog({
             </div>
           )}
 
-          <Button
-            className="w-full"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            {isGenerating ? "Generating..." : "Generate ZIP"}
-          </Button>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full font-bold border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                const d = startDate || format(new Date(), "yyyy-MM-dd");
+                window.open(`/reports/print?userId=${employeeId}&date=${d}`, "_blank");
+              }}
+            >
+              <Printer className="h-4 w-4 mr-2 text-blue-600" />
+              Open Printable A4 Sheet
+            </Button>
+
+            <Button
+              className="w-full font-bold bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleGenerate}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isGenerating ? "Generating..." : "Download Daily PDFs (ZIP)"}
+            </Button>
+          </div>
         </div>
 
         {/* Hidden templates for html2canvas */}
