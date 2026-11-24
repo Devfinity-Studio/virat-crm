@@ -31,7 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Printer } from "lucide-react";
 import { PrintReportDialog } from "./PrintReportDialog";
 import { TimeSlabHistory } from "./TimeSlabHistory";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 interface ReportListProps {
@@ -51,9 +51,19 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
     enabled: isManager || isAdmin,
   });
   
-  const [scope, setScope] = useState<"individual" | "management" | "branch">("individual");
+  const [scope, setScope] = useState<"all" | "individual" | "management" | "branch">(
+    isAdmin ? "all" : isManager ? "branch" : "individual",
+  );
   const [branchId, setBranchId] = useState<string>("");
   const [targetUserId, setTargetUserId] = useState<string>("");
+
+  useEffect(() => {
+    if (isAdmin) {
+      setScope((prev) => (prev === "individual" ? "all" : prev));
+    } else if (isManager) {
+      setScope((prev) => (prev === "individual" ? "branch" : prev));
+    }
+  }, [isAdmin, isManager]);
 
   const { data: selectableUsers } = api.reports.getSelectableUsers.useQuery(undefined, {
     enabled: isManager || isAdmin,
@@ -66,19 +76,21 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
   const { data: reports, isLoading } = api.dailyReports.listScopedReports.useQuery({
     scope: isManager || isAdmin ? scope : "individual",
     targetId: targetUserId ? targetUserId : undefined,
-    branchId: scope === "branch" && branchId ? parseInt(branchId) : undefined,
-    limit: 50,
+    branchId: branchId && branchId !== "all" ? parseInt(branchId) : undefined,
+    search: search.trim() || undefined,
+    limit: 100,
   });
 
-  const filteredReports = reports?.filter(
-    (report) =>
-      report.content.toLowerCase().includes(search.toLowerCase()) ||
-      (report.customer?.name.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-      ((isManager || isAdmin) &&
-        `${report.user.firstName} ${report.user.lastName}`
-          .toLowerCase()
-          .includes(search.toLowerCase())),
-  );
+  const filteredReports = reports?.filter((report) => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    const contentMatch = (report.content ?? "").toLowerCase().includes(q);
+    const customerMatch = (report.customer?.name ?? "").toLowerCase().includes(q);
+    const userName = `${report.user?.firstName ?? ""} ${report.user?.lastName ?? ""}`.trim().toLowerCase();
+    const userMatch = userName.includes(q);
+    const codeMatch = (report.user?.employeeCode ?? "").toLowerCase().includes(q);
+    return contentMatch || customerMatch || userMatch || codeMatch;
+  });
 
   return (
     <div className="space-y-6 pb-24">
@@ -86,45 +98,72 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
       {(isManager || isAdmin) && (
         <div className="flex flex-col gap-4">
           <div className="flex gap-2 p-1 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200">
-            <Button
-              variant={scope === "individual" ? "default" : "ghost"}
-              className={`flex-1 rounded-lg font-bold shadow-none ${scope === "individual" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
-              onClick={() => {
-                setScope("individual");
-                setBranchId("");
-              }}
-            >
-              My Reports
-            </Button>
-            <Button
-              variant={scope === "management" ? "default" : "ghost"}
-              className={`flex-1 rounded-lg font-bold shadow-none ${scope === "management" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
-              onClick={() => {
-                setScope("management");
-                setBranchId("");
-              }}
-            >
-              Team Reports
-            </Button>
-            {isAdmin && (
-              <Button
-                variant={scope === "branch" ? "default" : "ghost"}
-                className={`flex-1 rounded-lg font-bold shadow-none ${scope === "branch" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
-                onClick={() => {
-                  setScope("branch");
-                  setTargetUserId("");
-                }}
-              >
-                Branch Reports
-              </Button>
+            {isAdmin ? (
+              <>
+                <Button
+                  variant={scope === "all" ? "default" : "ghost"}
+                  className={`flex-1 rounded-lg font-bold shadow-none ${scope === "all" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
+                  onClick={() => {
+                    setScope("all");
+                    setBranchId("");
+                    setTargetUserId("");
+                  }}
+                >
+                  All Reports
+                </Button>
+                <Button
+                  variant={scope === "branch" ? "default" : "ghost"}
+                  className={`flex-1 rounded-lg font-bold shadow-none ${scope === "branch" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
+                  onClick={() => {
+                    setScope("branch");
+                    setTargetUserId("");
+                  }}
+                >
+                  Branch Reports
+                </Button>
+                <Button
+                  variant={scope === "individual" ? "default" : "ghost"}
+                  className={`flex-1 rounded-lg font-bold shadow-none ${scope === "individual" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
+                  onClick={() => {
+                    setScope("individual");
+                    setBranchId("");
+                    setTargetUserId("");
+                  }}
+                >
+                  My Reports
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant={scope === "branch" ? "default" : "ghost"}
+                  className={`flex-1 rounded-lg font-bold shadow-none ${scope === "branch" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
+                  onClick={() => {
+                    setScope("branch");
+                    setTargetUserId("");
+                  }}
+                >
+                  Branch Activity
+                </Button>
+                <Button
+                  variant={scope === "individual" ? "default" : "ghost"}
+                  className={`flex-1 rounded-lg font-bold shadow-none ${scope === "individual" ? "bg-white text-blue-600 hover:bg-white" : "text-slate-500 hover:text-slate-700"}`}
+                  onClick={() => {
+                    setScope("individual");
+                    setTargetUserId("");
+                  }}
+                >
+                  My Reports
+                </Button>
+              </>
             )}
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
-            {/* Target User Selector for Admins/Managers to inspect specific individuals (REP-03) */}
-            {(isAdmin || (isManager && scope === "management")) && selectableUsers && selectableUsers.length > 0 && (
+            {/* Target User Selector for Admins/Managers */}
+            {(isAdmin || isManager) && selectableUsers && selectableUsers.length > 0 && (
               <div className="flex items-center gap-2">
-                <Select value={targetUserId} onValueChange={(val) => setTargetUserId(val === "all" ? "" : val)}>
+                <Select value={targetUserId || "all"} onValueChange={(val) => setTargetUserId(val === "all" ? "" : val)}>
                   <SelectTrigger className="w-[220px] rounded-xl border-2 border-slate-200 bg-white font-bold shadow-sm focus:ring-0">
                     <SelectValue placeholder="All Team Members" />
                   </SelectTrigger>
@@ -143,13 +182,16 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
             )}
 
             {/* Branch Selector for Admins */}
-            {scope === "branch" && isAdmin && (
+            {isAdmin && (scope === "branch" || scope === "all") && (
               <div className="flex items-center gap-2">
-                <Select value={branchId} onValueChange={setBranchId}>
+                <Select value={branchId || "all"} onValueChange={(val) => setBranchId(val === "all" ? "" : val)}>
                   <SelectTrigger className="w-[200px] rounded-xl border-2 border-slate-200 bg-white font-bold shadow-sm focus:ring-0">
-                    <SelectValue placeholder="Select a branch..." />
+                    <SelectValue placeholder="All Branches" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-2 border-slate-200">
+                    <SelectItem value="all" className="font-medium text-slate-500">
+                      All Branches
+                    </SelectItem>
                     {branches?.map((b) => (
                       <SelectItem key={b.id} value={b.id.toString()} className="font-medium">
                         {b.name}
@@ -243,12 +285,22 @@ export function ReportList({ isManager = false, isAdmin = false }: ReportListPro
                           {format(new Date(report.reportDate), "MMM dd, yyyy")}
                         </div>
 
-                        {(scope === "management" || scope === "branch") && (
-                          <div className="flex items-center gap-2 text-sm text-slate-700 bg-slate-100 p-2 rounded-lg font-bold border-2 border-slate-200/50">
-                            <User className="h-4 w-4 text-indigo-500" />
-                            <span>
-                              {report.user.firstName} {report.user.lastName}
-                            </span>
+                        {(scope === "all" || scope === "management" || scope === "branch" || isAdmin || isManager) && report.user && (
+                          <div className="flex flex-col gap-1 text-sm text-slate-700 bg-slate-100 p-2.5 rounded-xl font-bold border-2 border-slate-200/50">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-indigo-500 shrink-0" />
+                              <span className="truncate">
+                                {report.user.firstName} {report.user.lastName}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] text-slate-500 pl-6">
+                              {report.user.employeeCode && (
+                                <span className="font-mono">{report.user.employeeCode}</span>
+                              )}
+                              {report.branch && (
+                                <span className="font-semibold text-indigo-600">{report.branch.name}</span>
+                              )}
+                            </div>
                           </div>
                         )}
 

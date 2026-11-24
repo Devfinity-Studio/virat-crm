@@ -15,8 +15,13 @@ export default function ReportsPage() {
   const { data: user } = api.users.getMe.useQuery();
 
   const isManager =
-    user?.permissions.isManager ?? user?.permissions.isAdmin ?? false;
-  const isAdmin = user?.role === "Admin";
+    user?.permissions?.isManager ??
+    (user?.role === "Manager" ||
+      user?.role === "Admin" ||
+      user?.role === "Developer");
+  const isAdmin =
+    user?.permissions?.isAdmin ??
+    (user?.role === "Admin" || user?.role === "Developer");
 
   return (
     <DashboardLayout>
