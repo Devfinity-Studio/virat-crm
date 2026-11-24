@@ -25,6 +25,9 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  Lock,
+  Unlock,
+  Ban,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -87,6 +90,34 @@ export default function DeveloperPage() {
     onSuccess: () => {
       toast.success("User account permanently purged from database");
       void utils.users.getAllUsers.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const {
+    data: blockedEntities,
+    isLoading: isBlockedEntitiesLoading,
+    refetch: refetchBlockedEntities,
+  } = api.developer.getBlockedEntities.useQuery(undefined, {
+    enabled: user?.role === "Developer",
+    refetchInterval: 10000,
+  });
+
+  const unblockIpMutation = api.developer.unblockIp.useMutation({
+    onSuccess: () => {
+      toast.success("IP address successfully unblocked");
+      void refetchBlockedEntities();
+      void refetchLogs();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const unlockUserMutation = api.developer.unlockUser.useMutation({
+    onSuccess: () => {
+      toast.success("User account unlocked and counters reset");
+      void refetchBlockedEntities();
+      void utils.users.getAllUsers.invalidate();
+      void refetchLogs();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -955,6 +986,156 @@ export default function DeveloperPage() {
           </CardContent>
         </Card>
 
+        {/* Security Lockouts & IP Bans */}
+        <Card className="overflow-hidden rounded-2xl border-slate-100 shadow-xl">
+          <CardHeader className="border-b border-slate-100 bg-slate-50">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                  <ShieldAlert className="h-5 w-5 text-red-600" />
+                  Security Lockouts &amp; IP Bans (Brute Force Defense)
+                </CardTitle>
+                <CardDescription>
+                  Real-time status of blocked IP addresses (3+ failed login attempts) and locked employee accounts (3 wrong passwords).
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void refetchBlockedEntities()}
+                disabled={isBlockedEntitiesLoading}
+                className="rounded-xl border-slate-200 text-xs font-semibold"
+              >
+                <RefreshCw
+                  className={`mr-1.5 h-3.5 w-3.5 ${isBlockedEntitiesLoading ? "animate-spin" : ""}`}
+                />
+                Refresh Lockouts
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 p-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Blocked IP Addresses */}
+              <div className="flex flex-col rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-slate-600" />
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Blocked IP Addresses
+                    </h3>
+                  </div>
+                  <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+                    {blockedEntities?.blockedIps.filter((b) => b.isBlocked).length ?? 0} banned IP(s)
+                  </Badge>
+                </div>
+
+                {!blockedEntities?.blockedIps || blockedEntities.blockedIps.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 p-8 text-center">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                    <p className="mt-2 text-xs font-semibold text-slate-600">
+                      No blocked IP addresses
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      IPs are automatically blocked for 1 hour after 3 consecutive failed login attempts.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200/60 bg-white">
+                    {blockedEntities.blockedIps.map((ip) => (
+                      <div
+                        key={ip.ipAddress}
+                        className="flex items-center justify-between p-3.5"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-mono text-xs font-bold text-slate-800">
+                            {ip.ipAddress}
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            Failed attempts: <strong className="text-red-600">{ip.failedAttempts}</strong>
+                            {ip.isBlocked ? (
+                              <span className="ml-2 font-bold text-red-600">
+                                (Banned • {ip.minutesRemaining} min remaining)
+                              </span>
+                            ) : (
+                              <span className="ml-2 text-slate-400">(Not banned yet)</span>
+                            )}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-xl border-slate-200 text-xs font-bold text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                          disabled={unblockIpMutation.isPending}
+                          onClick={() => unblockIpMutation.mutate({ ipAddress: ip.ipAddress })}
+                        >
+                          <Unlock className="mr-1 h-3.5 w-3.5" /> Unblock
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Locked Accounts */}
+              <div className="flex flex-col rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-slate-600" />
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Locked Employee Accounts
+                    </h3>
+                  </div>
+                  <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+                    {blockedEntities?.lockedUsers.filter((u) => u.isLocked).length ?? 0} locked account(s)
+                  </Badge>
+                </div>
+
+                {!blockedEntities?.lockedUsers ||
+                blockedEntities.lockedUsers.filter((u) => u.isLocked).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 p-8 text-center">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                    <p className="mt-2 text-xs font-semibold text-slate-600">
+                      No accounts currently locked
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Accounts are locked for 1 hour after 3 consecutive wrong password attempts.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200/60 bg-white">
+                    {blockedEntities.lockedUsers
+                      .filter((u) => u.isLocked)
+                      .map((lockedUser) => (
+                        <div
+                          key={lockedUser.id}
+                          className="flex items-center justify-between p-3.5"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-slate-800">
+                              {lockedUser.firstName} {lockedUser.lastName} ({lockedUser.employeeCode})
+                            </span>
+                            <span className="text-[10px] font-semibold text-red-600">
+                              {lockedUser.failedLoginAttempts} wrong passwords • {lockedUser.minutesRemaining} min remaining
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl border-amber-200 bg-amber-50 text-xs font-bold text-amber-700 hover:bg-amber-100"
+                            disabled={unlockUserMutation.isPending}
+                            onClick={() => unlockUserMutation.mutate({ userId: lockedUser.id })}
+                          >
+                            <Unlock className="mr-1 h-3.5 w-3.5" /> Unlock Account
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Database User Wipeout Area */}
         <Card className="overflow-hidden rounded-2xl border-slate-100 shadow-xl">
           <CardHeader className="flex flex-col justify-between gap-4 border-b border-slate-100 bg-slate-50 sm:flex-row sm:items-center">
@@ -996,74 +1177,110 @@ export default function DeveloperPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-                    {allUsers?.map((u) => (
-                      <tr
-                        key={u.id}
-                        className="transition-colors hover:bg-slate-50/30"
-                      >
-                        <td className="p-4 pl-6">
-                          <div className="flex flex-col">
-                            <span className="font-extrabold text-slate-800">
-                              {u.firstName} {u.lastName}
-                            </span>
-                            <span className="text-[10px] font-normal text-slate-400">
-                              {u.employeeCode}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-4">{u.email}</td>
-                        <td className="p-4">
-                          <Badge
-                            variant={
-                              u.role === "Developer"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {u.role}
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-slate-500">
-                          {u.branch?.name ?? "N/A"}
-                        </td>
-                        <td className="p-4">
-                          {u.isActive ? (
+                    {allUsers?.map((u) => {
+                      const isLocked =
+                        !!u.accountLockedUntil &&
+                        new Date(u.accountLockedUntil) > new Date();
+
+                      return (
+                        <tr
+                          key={u.id}
+                          className="transition-colors hover:bg-slate-50/30"
+                        >
+                          <td className="p-4 pl-6">
+                            <div className="flex flex-col">
+                              <span className="font-extrabold text-slate-800">
+                                {u.firstName} {u.lastName}
+                              </span>
+                              <span className="text-[10px] font-normal text-slate-400">
+                                {u.employeeCode}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-4">{u.email}</td>
+                          <td className="p-4">
                             <Badge
-                              variant="secondary"
-                              className="border-emerald-100 bg-emerald-50 font-bold text-emerald-700"
+                              variant={
+                                u.role === "Developer"
+                                  ? "destructive"
+                                  : "secondary"
+                              }
                             >
-                              Active
+                              {u.role}
                             </Badge>
-                          ) : (
-                            <Badge
-                              variant="secondary"
-                              className="bg-slate-100 font-bold text-slate-600"
-                            >
-                              Inactive
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="p-4 pr-6 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600"
-                            disabled={
-                              u.role === "Developer" ||
-                              deleteAccountMutation.isPending
-                            }
-                            onClick={() =>
-                              handleDeleteUser(
-                                u.id,
-                                `${u.firstName} ${u.lastName}`,
-                              )
-                            }
-                          >
-                            <Trash2 className="mr-1.5 h-4 w-4" /> Purge Account
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="p-4 text-slate-500">
+                            {u.branch?.name ?? "N/A"}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1">
+                              {isLocked ? (
+                                <Badge
+                                  variant="destructive"
+                                  className="flex w-max items-center gap-1 font-bold"
+                                >
+                                  <Lock className="h-3 w-3" />
+                                  Locked (3 Wrong Pwd)
+                                </Badge>
+                              ) : u.isActive ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="w-max border-emerald-100 bg-emerald-50 font-bold text-emerald-700"
+                                >
+                                  Active
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="secondary"
+                                  className="w-max bg-slate-100 font-bold text-slate-600"
+                                >
+                                  Inactive
+                                </Badge>
+                              )}
+                              {(u.failedLoginAttempts ?? 0) > 0 && !isLocked && (
+                                <span className="text-[10px] font-semibold text-amber-600">
+                                  {u.failedLoginAttempts}/3 failed
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 pr-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {isLocked && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-xl border-amber-200 bg-amber-50 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                                  disabled={unlockUserMutation.isPending}
+                                  onClick={() =>
+                                    unlockUserMutation.mutate({ userId: u.id })
+                                  }
+                                >
+                                  <Unlock className="mr-1 h-3.5 w-3.5" /> Unlock
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600"
+                                disabled={
+                                  u.role === "Developer" ||
+                                  deleteAccountMutation.isPending
+                                }
+                                onClick={() =>
+                                  handleDeleteUser(
+                                    u.id,
+                                    `${u.firstName} ${u.lastName}`,
+                                  )
+                                }
+                              >
+                                <Trash2 className="mr-1.5 h-4 w-4" /> Purge Account
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

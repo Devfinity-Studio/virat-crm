@@ -3,7 +3,8 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { systemSettings } from "@/server/db/schema/systemSettings";
 import { users } from "@/server/db/schema/users";
 import { systemAuditLogs } from "@/server/db/schema/systemAuditLogs";
-import { eq, and, or, ilike, desc, lt } from "drizzle-orm";
+import { ipBlocks } from "@/server/db/schema/ipBlocks";
+import { eq, and, or, ilike, desc, lt, gt } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { logSystemEvent } from "@/server/lib/audit-logger";
 
@@ -210,6 +211,129 @@ export const developerRouter = createTRPCRouter({
         userEmail: ctx.dbUser.email,
         userRole: ctx.dbUser.role,
         details: `Purged audit logs ${input.olderThanDays === 0 ? "completely" : `older than ${input.olderThanDays} days`}`,
+      });
+
+      return { success: true };
+    }),
+
+  getBlockedEntities: developerProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+
+    // 1. Fetch currently blocked or high-attempt IPs
+    const allIpBlocks = await ctx.db
+      .select()
+      .from(ipBlocks)
+      .orderBy(desc(ipBlocks.lastAttemptAt));
+
+    const blockedIps = allIpBlocks.map((record) => {
+      const isBlocked =
+        !!record.blockedUntil && record.blockedUntil.getTime() > now.getTime();
+      const minutesRemaining = isBlocked
+        ? Math.ceil((record.blockedUntil!.getTime() - now.getTime()) / 60000)
+        : 0;
+
+      return {
+        ...record,
+        isBlocked,
+        minutesRemaining,
+      };
+    });
+
+    // 2. Fetch locked user accounts
+    const allUsers = await ctx.db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        employeeCode: users.employeeCode,
+        role: users.role,
+        isActive: users.isActive,
+        failedLoginAttempts: users.failedLoginAttempts,
+        accountLockedUntil: users.accountLockedUntil,
+        lockoutReason: users.lockoutReason,
+      })
+      .from(users)
+      .where(
+        or(
+          gt(users.failedLoginAttempts, 0),
+          gt(users.accountLockedUntil, now),
+        ),
+      );
+
+    const lockedUsers = allUsers.map((u) => {
+      const isLocked =
+        !!u.accountLockedUntil && u.accountLockedUntil.getTime() > now.getTime();
+      const minutesRemaining = isLocked
+        ? Math.ceil((u.accountLockedUntil!.getTime() - now.getTime()) / 60000)
+        : 0;
+
+      return {
+        ...u,
+        isLocked,
+        minutesRemaining,
+      };
+    });
+
+    return {
+      blockedIps,
+      lockedUsers,
+    };
+  }),
+
+  unblockIp: developerProcedure
+    .input(z.object({ ipAddress: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.delete(ipBlocks).where(eq(ipBlocks.ipAddress, input.ipAddress));
+
+      await logSystemEvent({
+        eventType: "DEVELOPER_ACTION",
+        action: "IP Address Unblocked",
+        status: "INFO",
+        userId: ctx.dbUser.id,
+        userName: `${ctx.dbUser.firstName} ${ctx.dbUser.lastName}`,
+        userEmail: ctx.dbUser.email,
+        userRole: ctx.dbUser.role,
+        details: `Removed login ban and reset failed attempts for IP ${input.ipAddress}`,
+        metadata: { ipAddress: input.ipAddress },
+      });
+
+      return { success: true };
+    }),
+
+  unlockUser: developerProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const targetUser = await ctx.db.query.users.findFirst({
+        where: eq(users.id, input.userId),
+      });
+
+      if (!targetUser) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
+      }
+
+      await ctx.db
+        .update(users)
+        .set({
+          failedLoginAttempts: 0,
+          accountLockedUntil: null,
+          lockoutReason: null,
+        })
+        .where(eq(users.id, input.userId));
+
+      await logSystemEvent({
+        eventType: "DEVELOPER_ACTION",
+        action: "User Account Unlocked",
+        status: "INFO",
+        userId: ctx.dbUser.id,
+        userName: `${ctx.dbUser.firstName} ${ctx.dbUser.lastName}`,
+        userEmail: ctx.dbUser.email,
+        userRole: ctx.dbUser.role,
+        details: `Unlocked user account for ${targetUser.firstName} ${targetUser.lastName} (${targetUser.employeeCode}), reset failed login counters.`,
+        metadata: {
+          targetUserId: targetUser.id,
+          targetEmployeeCode: targetUser.employeeCode,
+        },
       });
 
       return { success: true };

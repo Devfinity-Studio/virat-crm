@@ -52,6 +52,7 @@ export {
 } from "./customers";
 export { dailyReports, dailyReportsRelations } from "./daily_reports";
 export { systemSettings } from "./systemSettings";
+export { ipBlocks } from "./ipBlocks";
 export { dailyMileage, dailyMileageRelations } from "./daily_mileage";
 export { customerVisits, customerVisitsRelations } from "./customer_visits";
 export { saleAssignments, saleAssignmentsRelations } from "./saleAssignments";

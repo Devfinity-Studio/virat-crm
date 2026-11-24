@@ -40,6 +40,9 @@ export const users = createTable("user", {
   lastLng: varchar("last_lng", { length: 32 }),
   connectivityStatus: varchar("connectivity_status", { length: 32 }),
   phone: varchar("phone", { length: 32 }),
+  failedLoginAttempts: integer("failed_login_attempts").default(0).notNull(),
+  accountLockedUntil: timestamp("account_locked_until", { withTimezone: true }),
+  lockoutReason: varchar("lockout_reason", { length: 256 }),
   emailNotifications: boolean("email_notifications").default(true).notNull(),
   smsNotifications: boolean("sms_notifications").default(true).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })

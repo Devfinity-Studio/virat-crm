@@ -14,6 +14,7 @@ import {
   MapPin,
   BarChart3,
   Lock,
+  Unlock,
   Edit,
   MoreVertical,
   X,
@@ -115,6 +116,9 @@ interface UserType {
   role: string | null;
   branchId: number | null;
   isActive: boolean;
+  failedLoginAttempts?: number | null;
+  accountLockedUntil?: string | Date | null;
+  lockoutReason?: string | null;
   branch?: { id: number; name: string } | null;
   managers?:
     | {
@@ -211,7 +215,12 @@ function UserTableRow({
           : "-"}
       </TableCell>
       <TableCell>
-        {user.isActive ? (
+        {user.accountLockedUntil && new Date(user.accountLockedUntil) > new Date() ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-red-700 uppercase">
+            <Lock className="h-2.5 w-2.5" />
+            Locked
+          </span>
+        ) : user.isActive ? (
           <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-green-700 uppercase">
             Active
           </span>
@@ -280,6 +289,16 @@ function UserList() {
     },
     onError: (err) => {
       toast.error(`Error resetting password: ${err.message}`);
+    },
+  });
+
+  const unlockAccountMutation = api.users.unlockAccount.useMutation({
+    onSuccess: () => {
+      toast.success("Account unlocked successfully and failed login counters reset");
+      void utils.users.getAllUsers.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Error unlocking account: ${err.message}`);
     },
   });
 
@@ -622,6 +641,23 @@ function UserList() {
             </div>
 
             <div className="space-y-2">
+              {contextMenu.user.accountLockedUntil &&
+                new Date(contextMenu.user.accountLockedUntil) > new Date() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      unlockAccountMutation.mutate({
+                        userId: contextMenu.user.id,
+                      });
+                      setContextMenu(null);
+                    }}
+                    className="flex min-h-[50px] w-full items-center gap-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-left text-sm font-bold text-amber-800 hover:bg-amber-100 active:scale-[0.99] transition-colors"
+                  >
+                    <Unlock className="h-5 w-5 text-amber-600 shrink-0" />
+                    <span>Unlock Account (Clear Lockout)</span>
+                  </button>
+                )}
+
               <button
                 type="button"
                 onClick={() => {
@@ -766,6 +802,22 @@ function UserList() {
                 {contextMenu.user.firstName} {contextMenu.user.lastName}
               </p>
             </div>
+
+            {contextMenu.user.accountLockedUntil &&
+              new Date(contextMenu.user.accountLockedUntil) > new Date() && (
+                <button
+                  onClick={() => {
+                    unlockAccountMutation.mutate({
+                      userId: contextMenu.user.id,
+                    });
+                    setContextMenu(null);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-left text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+                >
+                  <Unlock className="h-4 w-4 text-amber-600" />
+                  <span>Unlock Account</span>
+                </button>
+              )}
 
             <button
               onClick={() => {
