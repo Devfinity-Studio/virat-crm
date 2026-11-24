@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Key, User, FileText, X, FileCheck, CheckCircle2, AlertCircle, Loader2, Hash, Sparkles } from "lucide-react";
 import { GenericUploader, type UploadedFile } from "@/app/_components/ui/GenericUploader";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 
 export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
   const [successData, setSuccessData] = useState<{name: string, employeeCode: string} | null>(null);
@@ -321,20 +323,18 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
                   <Label>Reporting Managers</Label>
                   <div className="flex max-h-40 flex-col gap-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50 p-3">
                     {managers?.map((m) => (
-                      <label key={m.id} className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
+                      <label key={m.id} className="flex cursor-pointer items-center gap-2.5 py-0.5">
+                        <Checkbox
                           checked={formData.managerIds.includes(m.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
+                          onCheckedChange={(checked) => {
+                            if (checked) {
                               setFormData({ ...formData, managerIds: [...formData.managerIds, m.id] });
                             } else {
                               setFormData({ ...formData, managerIds: formData.managerIds.filter((id) => id !== m.id) });
                             }
                           }}
-                          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
                         />
-                        <span className="text-sm text-slate-700">
+                        <span className="text-sm font-medium text-slate-700">
                           {m.firstName} {m.lastName}
                         </span>
                       </label>
@@ -360,17 +360,16 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
 
                   <div className="flex items-center gap-2">
                     <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs hover:border-slate-300 transition-colors">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={isManualCode}
-                        onChange={(e) => {
-                          setIsManualCode(e.target.checked);
-                          if (!e.target.checked) {
+                        onCheckedChange={(checked) => {
+                          const isChecked = Boolean(checked);
+                          setIsManualCode(isChecked);
+                          if (!isChecked) {
                             setManualCode("");
                             setDebouncedCode("");
                           }
                         }}
-                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                       />
                       <span className="text-xs font-semibold text-slate-700">
                         Manual E-Code
@@ -463,11 +462,10 @@ export function AddUserForm({ onSuccess }: { onSuccess: () => void }) {
               {canAddWithoutDocs && (
                 <div className="flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3.5 py-2">
                   <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
+                    <Switch
+                      size="sm"
                       checked={skipDocuments}
-                      onChange={(e) => setSkipDocuments(e.target.checked)}
-                      className="h-4 w-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                      onCheckedChange={(checked) => setSkipDocuments(checked)}
                     />
                     <span className="text-xs font-semibold text-indigo-950">
                       Add without documents

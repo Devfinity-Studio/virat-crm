@@ -30,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -1138,13 +1139,12 @@ function UserList() {
                       ?.map((u) => (
                         <label
                           key={u.id}
-                          className="flex cursor-pointer items-center gap-2"
+                          className="flex cursor-pointer items-center gap-2.5 py-0.5"
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={editForm.managerIds.includes(u.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
+                            onCheckedChange={(checked) => {
+                              if (checked) {
                                 setEditForm({
                                   ...editForm,
                                   managerIds: [...editForm.managerIds, u.id],
@@ -1158,9 +1158,8 @@ function UserList() {
                                 });
                               }
                             }}
-                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
                           />
-                          <span className="text-sm text-slate-700">
+                          <span className="text-sm font-medium text-slate-700">
                             {u.firstName} {u.lastName} ({u.role})
                           </span>
                         </label>
