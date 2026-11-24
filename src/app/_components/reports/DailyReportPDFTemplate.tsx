@@ -35,7 +35,7 @@ export function DailyReportPDFTemplate({
   return (
     <div
       id={`pdf-template-${dateStr}`}
-      className="bg-white p-[10mm]"
+      className="pdf-page bg-white p-[10mm]"
       style={{
         width: "210mm",
         minHeight: "297mm",
@@ -44,9 +44,9 @@ export function DailyReportPDFTemplate({
       }}
     >
       {/* Main Border Container */}
-      <div className="border-[2px] border-black h-full flex flex-col">
+      <div className="pdf-container border-[2px] border-black h-full flex flex-col">
         {/* Header Row */}
-        <div className="flex border-b-[2px] border-black pb-2 items-start p-2">
+        <div className="pdf-header flex border-b-[2px] border-black pb-2 items-start p-2">
           <div className="w-[120px] pt-1">
             <img
               src={VIRAT_LOGO_BASE64}
@@ -56,7 +56,7 @@ export function DailyReportPDFTemplate({
               className="object-contain"
             />
           </div>
-          <div className="flex-1 text-center pt-2">
+          <div className="pdf-title flex-1 text-center pt-2">
             <h1 className="text-xl font-bold font-sans">
               DAILY ACTIVITY REPORT BM & ABOVE
             </h1>
@@ -65,33 +65,33 @@ export function DailyReportPDFTemplate({
         </div>
 
         {/* User Details */}
-        <div className="px-2 py-3 text-sm font-bold flex flex-col gap-2 border-b-[2px] border-black pb-4">
-          <div className="flex items-end gap-2">
+        <div className="pdf-user-details px-2 py-3 text-sm font-bold flex flex-col gap-2 border-b-[2px] border-black pb-4">
+          <div className="pdf-field-row flex items-end gap-2">
             <span className="w-16">NAME:</span>
-            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
+            <div className="pdf-field-underline flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
               {reportUser?.firstName} {reportUser?.lastName}
             </div>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="pdf-field-row flex items-end gap-2">
             <span className="w-16">DEG:</span>
-            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 max-w-[200px] font-semibold uppercase min-h-[22px]">
+            <div className="pdf-field-underline flex-1 border-b-[1.5px] border-black pb-0.5 max-w-[200px] font-semibold uppercase min-h-[22px]">
               {reportUser?.role || user?.role || ""}
             </div>
             <span className="ml-4">BRANCH:</span>
-            <div className="flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
+            <div className="pdf-field-underline flex-1 border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
               {reportBranch}
             </div>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="pdf-field-row flex items-end gap-2">
             <span className="w-20">E CODE:</span>
-            <div className="w-[150px] border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
+            <div className="pdf-field-underline w-[150px] border-b-[1.5px] border-black pb-0.5 font-semibold uppercase min-h-[22px]">
               {reportUser?.employeeCode || user?.employeeCode || ""}
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <table className="w-full text-center text-sm font-bold border-collapse">
+        <table className="pdf-table w-full text-center text-sm font-bold border-collapse">
           <thead>
             <tr className="bg-slate-300">
               <th rowSpan={2} className="border border-black p-2 w-[40px]">
@@ -140,7 +140,7 @@ export function DailyReportPDFTemplate({
         </table>
 
         {/* Footer */}
-        <div className="flex justify-between items-end mt-auto mb-24 px-4 font-bold text-sm">
+        <div className="pdf-footer flex justify-between items-end mt-auto mb-24 px-4 font-bold text-sm">
           <div>APPROVED</div>
           <div>DSM/DDSM</div>
           <div>SR.BM/BM</div>
