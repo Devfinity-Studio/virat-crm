@@ -211,35 +211,38 @@ export default function FeatureAccessPage() {
                       const updating = isUpdating === id;
 
                       return (
-                        <td key={role} className="px-6 py-6 text-center">
+                        <td key={role} className="px-6 py-4 text-center">
                           <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isEnabled}
                             onClick={() =>
                               handleToggle(role, feature.key, isEnabled)
                             }
                             disabled={
                               updating ||
                               (role === "Admin" && (feature.key === "dashboard" || feature.key === "admin"))
-                            } // Prevent disabling dashboard and admin panel for Admin
+                            }
                             className={cn(
-                              "relative inline-flex h-8 w-14 items-center justify-center rounded-full transition-all duration-300 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
                               isEnabled
-                                ? "bg-green-500 shadow-sm"
-                                : "bg-gray-200",
-                              updating && "cursor-wait opacity-50",
+                                ? "bg-emerald-600 shadow-xs"
+                                : "bg-slate-200",
+                              updating && "cursor-wait opacity-60",
                             )}
                           >
                             <span
                               className={cn(
-                                "absolute left-1 flex h-6 w-6 items-center justify-center rounded-full bg-white transition-transform duration-300",
-                                isEnabled ? "translate-x-6" : "translate-x-0",
+                                "inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm ring-0 transition-transform duration-200",
+                                isEnabled ? "translate-x-5.5" : "translate-x-0.5",
                               )}
                             >
                               {updating ? (
-                                <RefreshCcw className="h-3 w-3 animate-spin text-gray-400" />
+                                <RefreshCcw className="h-2.5 w-2.5 animate-spin text-slate-400" />
                               ) : isEnabled ? (
-                                <Unlock className="h-3 w-3 text-green-600" />
+                                <Unlock className="h-2.5 w-2.5 text-emerald-600" />
                               ) : (
-                                <Lock className="h-3 w-3 text-gray-400" />
+                                <Lock className="h-2.5 w-2.5 text-slate-400" />
                               )}
                             </span>
                           </button>
