@@ -15,6 +15,7 @@ import {
   calculateNextEmployeeCode,
   syncUserManagers,
 } from "@/server/lib/services/userService";
+import { logSystemEvent } from "@/server/lib/audit-logger";
 
 export const usersRouter = createTRPCRouter({
   signup: publicProcedure
@@ -654,8 +655,58 @@ export const usersRouter = createTRPCRouter({
       const hashedPassword = await bcrypt.hash(input.newPassword, 10);
       await ctx.db
         .update(users)
-        .set({ password: hashedPassword })
+        .set({
+          password: hashedPassword,
+          failedLoginAttempts: 0,
+          accountLockedUntil: null,
+          lockoutReason: null,
+        })
         .where(eq(users.id, input.userId));
+
+      return { success: true };
+    }),
+
+  unlockAccount: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.dbUser.role !== "Admin" && ctx.dbUser.role !== "Developer") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admins or developers can unlock accounts",
+        });
+      }
+
+      const targetUser = await ctx.db.query.users.findFirst({
+        where: eq(users.id, input.userId),
+      });
+
+      if (!targetUser) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      await ctx.db
+        .update(users)
+        .set({
+          failedLoginAttempts: 0,
+          accountLockedUntil: null,
+          lockoutReason: null,
+        })
+        .where(eq(users.id, input.userId));
+
+      await logSystemEvent({
+        eventType: "DEVELOPER_ACTION",
+        action: "User Account Unlocked",
+        status: "INFO",
+        userId: ctx.dbUser.id,
+        userName: `${ctx.dbUser.firstName} ${ctx.dbUser.lastName}`,
+        userEmail: ctx.dbUser.email,
+        userRole: ctx.dbUser.role,
+        details: `Account unlocked for ${targetUser.firstName} ${targetUser.lastName} (${targetUser.employeeCode}). Failed attempts counter reset.`,
+        metadata: {
+          targetUserId: targetUser.id,
+          targetEmployeeCode: targetUser.employeeCode,
+        },
+      });
 
       return { success: true };
     }),
